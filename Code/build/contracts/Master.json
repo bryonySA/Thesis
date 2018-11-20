@@ -1,0 +1,126 @@
+{
+  "contractName": "Master",
+  "abi": [],
+  "bytecode": "0x6080604052348015600f57600080fd5b50603580601d6000396000f3006080604052600080fd00a165627a7a72305820055053f314e505e63e9d84b1bf541fd0ee21c918fc29d856e0dc81dafd8b9cab0029",
+  "deployedBytecode": "0x6080604052600080fd00a165627a7a72305820055053f314e505e63e9d84b1bf541fd0ee21c918fc29d856e0dc81dafd8b9cab0029",
+  "sourceMap": "51:397:1:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;51:397:1;;;;;;;",
+  "deployedSourceMap": "51:397:1:-;;;;;",
+  "source": "pragma solidity ^0.4.23;\n\nimport \"./Company.sol\";\n\ncontract Master {\n\n    /*\n        DESCRIPTION:\n        The Master contract will be owned by SARegistry. This is a contract factory which\n        allows us to deploy new instances of the Company contract when reputable companies\n        want to be added onto the platform. These companies will be able to record payment\n        histories, so they will need to be vetted first.\n    */\n    \n       \n}",
+  "sourcePath": "/home/bryony/Dropbox/Dissertation/Thesis/Code/contracts/Master.sol",
+  "ast": {
+    "absolutePath": "/home/bryony/Dropbox/Dissertation/Thesis/Code/contracts/Master.sol",
+    "exportedSymbols": {
+      "Master": [
+        6
+      ]
+    },
+    "id": 7,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 4,
+        "literals": [
+          "solidity",
+          "^",
+          "0.4",
+          ".23"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:24:1"
+      },
+      {
+        "absolutePath": "/home/bryony/Dropbox/Dissertation/Thesis/Code/contracts/Company.sol",
+        "file": "./Company.sol",
+        "id": 5,
+        "nodeType": "ImportDirective",
+        "scope": 7,
+        "sourceUnit": 3,
+        "src": "26:23:1",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": true,
+        "id": 6,
+        "linearizedBaseContracts": [
+          6
+        ],
+        "name": "Master",
+        "nodeType": "ContractDefinition",
+        "nodes": [],
+        "scope": 7,
+        "src": "51:397:1"
+      }
+    ],
+    "src": "0:448:1"
+  },
+  "legacyAST": {
+    "absolutePath": "/home/bryony/Dropbox/Dissertation/Thesis/Code/contracts/Master.sol",
+    "exportedSymbols": {
+      "Master": [
+        6
+      ]
+    },
+    "id": 7,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 4,
+        "literals": [
+          "solidity",
+          "^",
+          "0.4",
+          ".23"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:24:1"
+      },
+      {
+        "absolutePath": "/home/bryony/Dropbox/Dissertation/Thesis/Code/contracts/Company.sol",
+        "file": "./Company.sol",
+        "id": 5,
+        "nodeType": "ImportDirective",
+        "scope": 7,
+        "sourceUnit": 3,
+        "src": "26:23:1",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": true,
+        "id": 6,
+        "linearizedBaseContracts": [
+          6
+        ],
+        "name": "Master",
+        "nodeType": "ContractDefinition",
+        "nodes": [],
+        "scope": 7,
+        "src": "51:397:1"
+      }
+    ],
+    "src": "0:448:1"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.4.24+commit.e67f0147.Emscripten.clang"
+  },
+  "networks": {
+    "5777": {
+      "events": {},
+      "links": {},
+      "address": "0x18b4585290a0dd6f5f0f27afff594965597e544e",
+      "transactionHash": "0xdc585a47af49efa014f3a15b465d212d863abc7af0cd0ee4892453986d8f91bc"
+    }
+  },
+  "schemaVersion": "2.0.1",
+  "updatedAt": "2018-11-20T20:30:25.165Z"
+}
