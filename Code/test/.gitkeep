@@ -1,0 +1,27 @@
+var Business = artifacts.require("./Business.sol");
+var Master = artifacts.require("./Master.sol");
+
+//Master contract test
+contract('Master', function(accounts) {
+    //test Variables
+    var business_name = "Lumkani";
+    var business_address = accounts[1];
+    //actual tests
+    it("Should add a business", function() {
+        return Master.deployed().then(function(instance) {
+            MasterInstance = instance;
+            return MasterInstance.addBusiness(business_address, business_name);
+        }).then(function(receipt) {
+            // check event
+            assert.equal(receipt.logs.length, 1, "an event should have been triggered");
+            assert.equal(receipt.logs[0].event, "businessAdded", "event should be businessAdded");
+            assert.equal(receipt.logs[0].args._businessName, business_name, "business in event must be " + business_name);
+
+            //check check if company exists
+            return MasterInstance.checkBusiness(business_name);
+        }).then(function(result) {
+            assert.equal(result, true, "added" + business_name + " must exist in mapping inside checkCompany function");
+        });
+    });
+
+});
