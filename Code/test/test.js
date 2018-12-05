@@ -1,86 +1,186 @@
 var Business = artifacts.require("./Business.sol");
 var Master = artifacts.require("./Master.sol");
 
-// accounts[0] is our Master Account
+// accounts[0] is CreditRegisters' Master Account
+
 //Master contract test
 contract('Master', function(accounts) {
+    
     //test Variables
     var business_name = "Lumkani";
     var business_address = accounts[1];
+    var invalid_business_name = "Invalid";
+    var invalid_business_address = accounts[9];
+    var businessContractAddress;
+    var masterAddress;
+    
+    it("should allow me to store the masterAddress", function(){
+    return Master.deployed().then(function(instance){
+        masterAddress = instance.address;
+        console.log(masterAddress);
+    });
+    });
+
     //actual tests
-    //Check business is added
-    it("Should add a business", function() {
+    //Check owner of master is set to account[0]
+    it("should make account[0] the owner of Master account", function(){
+        return Master.deployed().then(function(instance){
+            return instance.owner();
+        }).then(function(owner){
+            assert.equal(owner, accounts[0],"owner on Master contract wasn't properly set");
+        });
+    });    
+
+    // Check that account[1] cannot add a business
+    // https://ethereum.stackexchange.com/questions/9103/how-can-you-handle-an-expected-throw-in-a-contract-test-using-truffle-and-ethere
+    it("should only let account[0] add a business", function(){
+        return Master.deployed().then(function(instance){
+                return instance.addBusiness(invalid_business_address, invalid_business_name,{'from' : accounts[1]});
+        }).then(assert.fail)
+        .catch(function(error){
+            assert.include(
+                error.message,
+                "Only CreditRegister can add businesses",
+                "Error should be thrown when account[1] creates contract");
+            });
+    });
+
+    it("should not add the invalid business name to the array", function() {
         return Master.deployed().then(function(instance) {
-            MasterInstance = instance;
-            console.log(MasterInstance.contractName);
-            return MasterInstance.addBusiness(business_address, business_name);          
+            return instance.checkBusinessNameExists(invalid_business_name);         
+        }).then(function(result) {
+            assert.equal(false, result, "The invalid business name should not exist on the master contract");
+        });
+    });
+
+    it("should not add the invalid business address to the array", function() {
+        return Master.deployed().then(function(instance) {
+            return instance.checkBusinessAddressExists(invalid_business_address);         
+        }).then(function(result) {
+            assert.equal(false, result, "The invalid business address should not exist on the master contract");
+        });
+    });
+
+    //Check business is added with correct details
+    it("should add a business", function() {
+        return Master.deployed().then(function(instance) {
+            return instance.addBusiness(business_address, business_name);         
         }).then(function(receipt) {
-            //console.log(instance.contractName);
-            console.log(MasterInstance.contractName);
-            console.log(receipt.logs[0].args._contractAddress);
-            // check event
-            BusinessInstance = receipt;
             assert.equal(receipt.logs.length, 1, "an event should have been triggered");
             assert.equal(receipt.logs[0].event, "businessAdded", "event should be businessAdded");
             assert.equal(receipt.logs[0].args._businessName, business_name, "business in event must be " + business_name);
-            //assert.equal(MasterInstance.allBusinesses[0], business_name, "business name must be in allBusinesses");
-            
-            return MasterInstance.checkBusinessExists(business_name);
-        }).then(function(result) {
-            assert.equal(result, true, "added business " + business_name + " must exist in mapping inside checkBusiness function");
+            assert.equal(receipt.logs[0].args._businessAddress, business_address, "business in event must be " + business_address);
+            businessContractAddress = receipt.logs[0].args._contractAddress;
+            //businessInstance = Business.at(businessContractAddress);
         });
-            
-            // check if business exists
-            //return MasterInstance.checkBusinessExists(business_name);
-        //}).then(function(result) {
-        //    assert.equal(result, true, "added business " + business_name + " must exist in mapping inside checkBusiness function");
-        //});
     });
+
+    it("should update creator to master wallet", function(){
+    return Business.at(businessContractAddress).then(function(instance){
+            return instance.creator();
+        }).then(function(creator){
+            assert.equal(creator,masterAddress,"Creator must be master account");
+        });
+    });
+
+    it("should update master wallet to master contract address", function(){
+    return Business.at(businessContractAddress).then(function(instance){
+            return instance.masterWallet();
+        }).then(function(masterWallet){
+            assert.equal(masterWallet,masterAddress,"masterWallet must be the master contract address");
+        });
+    });
+
+    it("should set assigned to false initially", function(){
+    return Business.at(businessContractAddress).then(function(instance){
+            return instance.assigned();
+        }).then(function(assigned){
+            assert.equal(assigned,false,"before ownership is set, assigned must be false");
+        });
+    });
+
+    // After successful addition, the name should exist on master contract
+    it("Business Name should exist", function() {
+        return Master.deployed().then(function(instance) {
+            return instance.checkBusinessNameExists(business_name);         
+        }).then(function(result) {
+            assert.equal(true, result, "The business name should exist on the master contract");
+        });
+    });
+
+    // After successful addition, the address should exist on master contract
+    it("Business Address should exist", function() {
+        return Master.deployed().then(function(instance) {
+            return instance.checkBusinessAddressExists(business_address);         
+        }).then(function(result) {
+            assert.equal(true, result, "The business address should exist on the master contract");
+        });
+    });
+
+    
+    //Anyone can set ownership but only once therefore this test is invalid
+    /*// Only Master can set ownership
+        it("should only allow account[0] to set ownership", function(){
+        return Business.at(businessContractAddress).then(function(instance){
+                instance.setOwnership(business_address, business_name,masterAddress,{'from' : accounts[8]});
+        }).then(assert.fail)
+        .catch(function(error){
+            assert.include(
+                error.message,
+                "Only CreditRegister can add businesses.",
+                "Error should be thrown when CreditRegister doesn't send message");
+            });
+    });*/
+
+    // Ownership should be set to business wallet
+    it("Business owner should be business wallet", function() {
+        return Business.at(businessContractAddress).then(function(instance) {
+            instance.setOwnership(business_address, business_name,masterAddress);
+            return Business.at(businessContractAddress);
+        }).then(function(instance) {
+            return instance.owner();       
+        }).then(function(owner) {
+            assert.equal(owner, business_address, "The business address should be the owner");
+        });
+    });
+
+    // Business name must be set correctly
+    it("should store Business Name correctly", function() {
+        return Business.at(businessContractAddress).then(function(instance) {
+            return instance.businessName();       
+        }).then(function(businessName) {
+            assert.equal(businessName, business_name, "The business name should be the business name");
+        });
+    });
+
+    // Assigned should be set to true to ensure ownership is only assigned once
+    it("should change assigned to true", function() {
+        return Business.at(businessContractAddress).then(function(instance) {
+            return instance.assigned();       
+        }).then(function(assigned) {
+            assert.equal(assigned, true, "The assigned indicator should be true");
+        });
+    });  
+
+
+    // Ownership can only be set once
+    it("should only allow ownership to be set once", function(){
+        return Business.at(businessContractAddress).then(function(instance){
+                return instance.setOwnership(business_address, business_name,masterAddress);
+        }).then(assert.fail)
+        .catch(function(error){
+            assert.include(
+                error.message,
+                "Contract has already been assigned ownership",
+                "Error should be thrown when ownership set twice");
+            });
+    });
+
+
+    // Only business account can create customer - ie business must exist
+
+    // Customer creator is the business account
+
 
 
 });
-
-/*
-mapping(address => address) businessAddressToContract;      //Maps the business wallet to the deployed contract
-    mapping(string => address) businessNameToAddress;          //Maps the business name to its wallet address
-    mapping(string => bool) businessExists;
-
-
-//Business contract test
-contract('Business', function(accounts) {
-    //test Variables
-    var business_name = "Lumkani";
-    //var employeeWallet = accounts[2];
-    //var InvestorWallet = accounts[3];
-    var business_address = accounts[1];
-    //var allowedTokens = 100;
-    //var changeTokens = 150;
-    //var employeeId = 1;
-    //var ethAmount = 12;
-    //var rateToPay = 20;
-    //var rateToReceive = 20;
-    
-    //actual tests
-    it("Should set ownership of contract to business address", function() {
-        return Business.deployed().then(function(instance) {
-            BusinessInstance = instance;
-            BusinessInstance.setOwnership(business_address, business_name); //without this test will not work, onlyBusiness modifier requires it
-
-            /*return CompanyInstance.addEmployee(allowedTokens, employeeWallet, { //must be triggered from company address or master address
-                from: company_address
-            });
-        }).then(function(receipt) {
-            //check event
-            //console.log(receipt.logs[0]);
-            assert.equal(receipt.logs.length, 1, "an event should have been triggered");
-            assert.equal(receipt.logs[0].event, "employeeAdded", "event should be employeeAdded");
-            assert.equal(receipt.logs[0].args.employeeWallet, employeeWallet, "employee Wallet in event must be " + employeeWallet);
-            assert.equal(receipt.logs[0].args._employeeCounter.toNumber(), 1, "there show be 1 employee");
-
-            //check check if employee exists
-            return CompanyInstance.checkEmployee(employeeWallet);
-        }).then(function(result) {
-            assert.equal(result, true, "added employee wallet " + employeeWallet + " must exist in mapping inside checkEmployee function");
-        });
-    });
-}); */
