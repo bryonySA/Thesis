@@ -1,7 +1,6 @@
 pragma solidity ^0.4.23;
 
 import "./Business.sol";
-import "./Customer.sol";
 
 contract Master {
 
@@ -13,17 +12,13 @@ contract Master {
         histories, so they will need to be vetted first.
     */
     
-    string[] public allBusinesses;          //An array of the names of all business names loaded on the platform
+    //address[] public allBusinesses;          //An array of the address of all businesses loaded on the platform
 
     mapping(address => address) businessAddressToContract;      //Maps the business wallet to the deployed contract
-    mapping(string => address) businessNameToAddress;          //Maps the business name to its wallet address
-    mapping(string => bool) businessExists;                     //Maps the business name to boolean, allowing user to check if business exists
-    mapping(address => bool) businessAddressExists; 
+    mapping(string => address) businessNameToAddress;          //Maps the business name to its wallet address                    
+    mapping(address => bool) businessAddressExists;         //Maps the business address to boolean, allowing user to check if business exists
 
-    mapping(address => bool) customerAddressExists; 
-
-
-    event businessAdded(string _businessName, address _businessAddress, address _contractAddress);
+    event businessAdded(address _businessAddress, string _businessName, address _contractAddress);
 
     address public owner;
     //address masterContractAddress = address(this);
@@ -34,27 +29,34 @@ contract Master {
 
     function addBusiness(address _businessAddress, string _businessName) public {
         require(msg.sender == owner, "Only CreditRegister can add businesses.");
-        require(businessExists[_businessName] != true, "Business name already exists.");
+        //require(businessExists[_businessName] != true, "Business name already exists.");
         require(businessAddressExists[_businessAddress] != true, "Business wallet already exists.");
 
-        Business newBusiness =  new Business(this);
+        Business newBusiness = new Business();
         businessAddressToContract[_businessAddress] = newBusiness;
         address contractAddress = address(newBusiness);
         //businessAddressToContract[_businessAddress] = new Business();
         
-        allBusinesses.push(_businessName);
-        businessExists[_businessName] = true;
+        //allBusinesses.push(_businessAddress);
+        //businessExists[_businessName] = true;
         businessAddressExists[_businessAddress] = true;
         businessNameToAddress[_businessName] = _businessAddress;
-        emit businessAdded(_businessName, _businessAddress, contractAddress);
+        emit businessAdded(_businessAddress, _businessName, contractAddress);
     }
 
-    function checkBusinessNameExists(string _businessName) public view returns(bool){
-        return businessExists[_businessName];
-    }    
-
+  
     function checkBusinessAddressExists(address _businessAddress) public view returns(bool){
         return businessAddressExists[_businessAddress];
+    }
+
+
+    function getContractFromAddress(address _businessAddress) public view returns(address){
+        return businessAddressToContract[_businessAddress];
+    }
+
+  /* 
+    function checkBusinessNameExists(string _businessName) public view returns(bool){
+        return businessExists[_businessName];
     } 
 
     function checkCustomerAddressExists(address _customerAddress) public view returns(bool){
@@ -65,11 +67,11 @@ contract Master {
         }
     }
     
-    function getAllBusinesses(uint index) public view returns(string){
+    function getAllBusinesses(uint index) public view returns(address){
         return allBusinesses[index];
-    } 
+    }
 
-    function checkContractAddress(string _businessName) public view returns(address){
-        return businessAddressToContract[businessNameToAddress[_businessName]];
-    }   
+    function checkContractAddress(address _businessAddress) public view returns(address){
+        return businessAddressToContract[_businessAddress];
+    }  */ 
 }

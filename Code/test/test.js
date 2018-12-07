@@ -45,13 +45,13 @@ contract('Master', function(accounts) {
             });
     });
 
-    it("should not add the invalid business name to the array", function() {
+    /*it("should not add the invalid business name to the array", function() {
         return Master.deployed().then(function(instance) {
             return instance.checkBusinessNameExists(invalid_business_name);         
         }).then(function(result) {
             assert.equal(false, result, "The invalid business name should not exist on the master contract");
         });
-    });
+    });*/
 
     it("should not add the invalid business address to the array", function() {
         return Master.deployed().then(function(instance) {
@@ -75,21 +75,47 @@ contract('Master', function(accounts) {
         });
     });
 
+    //Should not allow business to be added twice
+    it("should not add a business if the wallet already exists", function() {
+        return Master.deployed().then(function(instance) {
+            return instance.addBusiness(business_address, business_name);         
+        }).then(assert.fail)
+            .catch(function(error){
+                assert.include(
+                error.message,
+                "Business wallet already exists",
+                "Error should be thrown wallet already exists");
+            });
+    });
+  
+
+    //Should update address to contract mapping table
+    it("should update the business address to contract mapping", function() {
+        return Master.deployed().then(function(instance) {
+            return instance.getContractFromAddress(business_address);         
+        }).then(function(contractAddress){
+            assert.equal(contractAddress,businessContractAddress,"Address to contract mapping incorrect")
+        });
+    });
+
+    //Creator must be master wallet
     it("should update creator to master wallet", function(){
     return Business.at(businessContractAddress).then(function(instance){
             return instance.creator();
         }).then(function(creator){
+            console.log('business creator: ' + creator);
             assert.equal(creator,masterAddress,"Creator must be master account");
         });
     });
 
-    it("should update master wallet to master contract address", function(){
+    //took this out because it turned out creator = masterAddress = msg.sender
+    /*it("should update master wallet to master contract address", function(){
     return Business.at(businessContractAddress).then(function(instance){
             return instance.masterWallet();
         }).then(function(masterWallet){
             assert.equal(masterWallet,masterAddress,"masterWallet must be the master contract address");
         });
-    });
+    });*/
 
     it("should set assigned to false initially", function(){
     return Business.at(businessContractAddress).then(function(instance){
@@ -99,14 +125,15 @@ contract('Master', function(accounts) {
         });
     });
 
-    // After successful addition, the name should exist on master contract
+    //took this out as we will use the address as a unique identifier
+    /*// After successful addition, the name should exist on master contract
     it("Business Name should exist", function() {
         return Master.deployed().then(function(instance) {
             return instance.checkBusinessNameExists(business_name);         
         }).then(function(result) {
             assert.equal(true, result, "The business name should exist on the master contract");
         });
-    });
+    });*/
 
     // After successful addition, the address should exist on master contract
     it("Business Address should exist", function() {
@@ -132,15 +159,26 @@ contract('Master', function(accounts) {
             });
     });*/
 
+
     // Ownership should be set to business wallet
     it("Business owner should be business wallet", function() {
         return Business.at(businessContractAddress).then(function(instance) {
-            instance.setOwnership(business_address, business_name,masterAddress);
-            return Business.at(businessContractAddress);
-        }).then(function(instance) {
+            return instance.setOwnership(business_address, business_name);
+        }).then(function(receipt) {
+            assert.equal(receipt.logs.length, 1, "an event should have been triggered");
+            assert.equal(receipt.logs[0].event, "ownershipSet", "event should be ownershipSet");
+            assert.equal(receipt.logs[0].args._businessName, business_name, "business in event must be " + business_name);
+            assert.equal(receipt.logs[0].args._businessAddress, business_address, "business in event must be " + business_address);
+            assert.equal(receipt.logs[0].args._contractAddress, businessContractAddress, "contract address in event must be " + businessContractAddress);
+        });
+    });
+
+    // Business name must be set correctly
+    it("should make Business Address the owner", function() {
+        return Business.at(businessContractAddress).then(function(instance) {
             return instance.owner();       
         }).then(function(owner) {
-            assert.equal(owner, business_address, "The business address should be the owner");
+            assert.equal(owner, business_address, "The business name should be the business name");
         });
     });
 
@@ -160,13 +198,13 @@ contract('Master', function(accounts) {
         }).then(function(assigned) {
             assert.equal(assigned, true, "The assigned indicator should be true");
         });
-    });  
+    }); 
 
 
     // Ownership can only be set once
     it("should only allow ownership to be set once", function(){
         return Business.at(businessContractAddress).then(function(instance){
-                return instance.setOwnership(business_address, business_name,masterAddress);
+                return instance.setOwnership(business_address, business_name);
         }).then(assert.fail)
         .catch(function(error){
             assert.include(
@@ -175,12 +213,8 @@ contract('Master', function(accounts) {
                 "Error should be thrown when ownership set twice");
             });
     });
-
-
     // Only business account can create customer - ie business must exist
 
     // Customer creator is the business account
-
-
 
 });

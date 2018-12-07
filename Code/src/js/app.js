@@ -39,10 +39,10 @@ App = {
                App.contracts.Business.setProvider(App.web3Provider);
            });
 
-           //$.getJSON('Customer.json', function(CustomerArtifact) {
-             //  App.contracts.Customer = TruffleContract(CustomerArtifact);
-              // App.contracts.Customer.setProvider(App.web3Provider);
-          // });
+          //$.getJSON('Lookup.json', function(LookupArtifact) {
+            //   App.contracts.Lookup = TruffleContract(LookupArtifact);
+            //   App.contracts.Lookup.setProvider(App.web3Provider);
+           //});
 
      },
 
@@ -72,6 +72,7 @@ App = {
           // get information from the modal
           var _businessName = $('#BusinessName').val();
           var _businessAddress = $('#BusinessAddress').val();
+          var masterAddress;
           // if the name was not provided
           if ((_businessName.trim() == '') || (web3.isAddress(_businessAddress)!= true)) {
                     // we cannot add a business
@@ -83,74 +84,69 @@ App = {
           App.contracts.Master.deployed().then(function (instance) {
                     // call the addBusiness function, 
                     // passing the business name and the business wallet address
-                    console.log('Adding business (' + _businessName + ')')
+                    //masterAddress = instance.address;
+                    //console.log('Master contract ID: '+masterAddress);
+                    console.log('Adding business (' + _businessName + ')');
                     return instance.addBusiness(_businessAddress, _businessName, {
                          from: App.account,
                          gas: 5000000
-                    });  
+                    }); 
+                    //console.log(instance.checkBusinessAddressExists());
           }).then(function (receipt) {
-               App.setOwnership();
-
+               console.log(receipt.logs[0].args._businessName + ' added');
+               businessContractAddress = receipt.logs[0].args._contractAddress;
+               console.log('business contract address' + businessContractAddress);
+               return businessContractAddress;
+          }).then(function(contractAddress) {
+                    App.setOwnership(contractAddress);
+                    return contractAddress;
+          }).then(function(contractAddress){
+               //Display the details, but at this point owner might still be 0x0
+               App.displayBusiness(contractAddress);
           // log the error if there is one
           }).catch(function (error) {
                     console.log(error);
           });
      },
-     /*addCustomer: function () {
-          console.log('button clicked');
-          // get information from the modal
-          var _customerName = $('#CustomerName').val();
-          var _customerAddress = $('#CustomerAddress').val();
-          // if the name was not provided
-          if ((_customerName.trim() == '') || (web3.isAddress(_customerAddress)!= true)) {
-                    // we cannot add a customer
-                    console.log('Cannot load customer');
-                    return false;
-          };
 
-          // get the instance of the Customer contract
-          App.contracts.Business.deployed().then(function (instance) {
-                    // call the addCustomer function, 
-                    // passing the custmer name and the customer wallet address
-                    console.log('Adding customer (' + _customerName + ')');
-                    console.log('Business contract is ' + instance.address);
-                    console.log('Business owner is ' + instance.owner);
-                    instance.addCustomer(_customerAddress, _customerName, {
-                         from: App.account,
-                         gas: 5000000
-                    });  
-          }).catch(function (error) {
-                    console.log(error);
+
+     displayBusiness: function(contractAddress) {
+          var contractAddress = contractAddress || $('#BusinessContractAddress').val();
+          return App.contracts.Business.at(contractAddress).then(function(instance){
+               console.log('displaying ' + contractAddress);
+               console.log('business contract address: ' + instance.address);
+               return instance.owner();
+          }).then(function(owner){
+               console.log('business owner: ' + owner) ;
+               return App.contracts.Business.at(contractAddress)
+          }).then(function(instance){
+               return instance.creator();
+          }).then(function(creator){
+               console.log('business creator: ' + creator);
           });
+     },
 
-     },*/
 
-     setOwnership: function(){
+     setOwnership: function(contractAddress){
           var _businessName = $('#BusinessName').val();
           var _businessAddress = $('#BusinessAddress').val();
-          console.log("success");
-          var masterInstance;
-          App.contracts.Master.deployed().then(function(instance) {
-               masterInstance = instance;
-               console.log(masterInstance.address);
-          }); 
-
-          App.contracts.Business.deployed().then(function(instance) {
+          
+          return App.contracts.Business.at(contractAddress).then(function(instance){
                console.log('Setting ownership');
-               console.log(masterInstance.address);
-               console.log(instance.assigned());
-
-               ///////// FIX THIS
-               //////Hard coded for now zzz
-
-               instance.setOwnership(_businessAddress, _businessName, 0x3Da47F4DA0e1f26e634B5e21E97D235331B2eCf8, {
+               return instance.setOwnership(_businessAddress, _businessName, {
                     from:App.account,
-                    gas:500000
+                    gas:5000000
                });
-               console.log('Ownership Set (' + _businessName + ')');
-               console.log(instance.address);
-               $('#BusinessName').val('');
-               $('#BusinessAddress').val('');
+          }).then(function(receipt){
+               if (receipt.logs[0].event == "ownershipSet") {  
+                    console.log('Business contract event' + receipt.logs[0].args._contractAddress);
+                    console.log('Ownership Set event(' + receipt.logs[0].args._businessName + ')');
+                    console.log('Business address event: '+receipt.logs[0].args._businessAddress);    
+                    $('#BusinessName').val('');
+                    $('#BusinessAddress').val('');
+               } else {
+                    console.log("Wrong event: " + receipt.logs[0].event);
+               };
           }).catch(function(error){
                console.log(error);
           });

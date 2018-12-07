@@ -58,6 +58,38 @@
       
           </div>
       </div>
+
+<!-- Modal form to display a business -->
+<div class="modal fade" id="displayBusiness" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Display a business</h4>
+        </div>
+        <div class="modal-body">
+
+            <div class="row">
+            <div class="col-lg-12">
+                <form>
+                <div class="form-group">
+                    <label for="business_contract">Business Contract Address</label>
+                    <input type="text" class="form-control" id="BusinessContractAddress" placeholder="Enter the contract address of the business to display.">
+                </div>
+                </form>
+            </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-primary btn-success" data-dismiss="modal" onclick="App.displayBusiness(); return false;">Submit</button>
+            <button type="button" class="btn" data-dismiss="modal">Close</button>
+        </div>
+        </div>
+
+    </div>
+</div>
 <!-- Modal form to add a customer -->
 <div class="modal fade" id="addCustomer" role="dialog">
     <div class="modal-dialog">
@@ -108,9 +140,12 @@
                <div class="row">
                <button class="btn btn-info btn-lg btn-create" data-toggle="modal" data-target="#addBusiness">Add a business</button>
                <button class="btn btn-info btn-lg btn-create" data-toggle="modal" data-target="#addCustomer">Add a customer</button>
+               <button class="btn btn-info btn-lg btn-create" data-toggle="modal" data-target="#displayBusiness">Display details in console</button>
                </div>
            </div>
      </div>
+
+        
 
 
 
