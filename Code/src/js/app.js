@@ -1,3 +1,11 @@
+
+// Code to link to IPFS 
+// Must run npm install --save ipfs-api first
+//https://medium.com/@sebinatx/building-a-fully-decentralized-user-profile-dapp-on-ethereum-and-ipfs-e55afac35718
+//https://www.npmjs.com/package/ipfs-api
+//var ipfsAPI = require('ipfs-api')
+//var ipfs = ipfsAPI({host:'localhost',port: '5001',protocol:'http'})
+
 App = {
      web3Provider: null,
      contracts: {},
@@ -6,6 +14,10 @@ App = {
 
      //NB: Make sure you've run npm install web3
      init: function() {
+          //ipfs.id(function(err, res) {
+          //     if (err) throw err
+          //     console.log('Connected to IPFS node!', res.id, res.agentVersion, res.protocolVersion);
+           //    });
           return App.initWeb3();
      },
 
@@ -72,7 +84,7 @@ App = {
           // get information from the modal
           var _businessName = $('#BusinessName').val();
           var _businessAddress = $('#BusinessAddress').val();
-          var masterAddress;
+          //var masterAddress;
           // if the name was not provided
           if ((_businessName.trim() == '') || (web3.isAddress(_businessAddress)!= true)) {
                     // we cannot add a business
@@ -109,8 +121,8 @@ App = {
           });
      },
 
-
-     displayBusiness: function(contractAddress) {
+     //This displays business details in the console for testing purposes
+     displayBusinessConsole: function(contractAddress) {
           var contractAddress = contractAddress || $('#BusinessContractAddress').val();
           return App.contracts.Business.at(contractAddress).then(function(instance){
                console.log('displaying ' + contractAddress);
@@ -124,6 +136,113 @@ App = {
           }).then(function(creator){
                console.log('business creator: ' + creator);
           });
+     },
+
+     //This displays all business details linked to the master account if the master account is signed in
+     displayBusinesses: function(){
+          // avoid reentry
+          if (App.loading) {
+               return;
+          };
+          App.loading = true;
+
+          // refresh account info
+          App.displayAccountInfo();
+          
+          //define placeholder for contract
+          var masterInstance;
+          var businessName;
+          var businessContract;
+          var businessAddress;
+          // check if the account is the master wallet
+          
+          return App.contracts.Master.deployed().then(function(instance){
+               masterInstance = instance;
+               return instance.owner();
+           }).then(function (owner) { 
+               if (owner == App.account){
+                    console.log("Displaying businesses");
+                    // return masterInstance.getAllBusinesses().then(function(businessAddresses) {
+                    masterInstance.getAllBusinesses().then(function(businessAddresses) {
+                         //var businessRow = $('#businessRow');
+                         //businessRow.empty();
+                         console.log("Array length "+businessAddresses.length);
+                         //fill template for each business
+                         for (var i = 0; i < businessAddresses.length; i++){
+                         //for (let i = 0; i < businessAddresses.length; i++){
+                              //App.newFunc(i,businessAddresses, masterInstance);
+                         //[0,1,2].forEach(function(i){
+                              console.log("start i = " + i);
+                              businessAddress = businessAddresses[i];
+                              console.log(businessAddress);
+                              /*businessName = masterInstance.getNameFromAddress(businessAddress);
+                              businessContract = masterInstance.getContractFromAddress(businessAddress);
+                              App.displayBusiness(
+                                   businessName,
+                                   businessAddress,
+                                   businessContract
+                              );*/
+                              masterInstance.getNameFromAddress(businessAddress).then(function (name) {
+                                   businessName = name;
+                                   console.log(businessName);
+                                   return masterInstance.getContractFromAddress(businessAddress);
+                              }).then(function (contract){
+                                   businessContract = contract;
+                                   console.log(businessContract);
+                              }).then(function(){
+                                   App.displayBusiness(
+                                        businessName,
+                                        businessAddress,
+                                        businessContract
+                                   );
+                                   console.log("i = "+i);
+                              }); 
+                         //});
+                         };
+                    });
+
+                    App.loading =false;
+
+               } else {
+                    console.log("Only Master Account", + owner +" can display businesses not " + App.Account);
+               }
+          });
+
+          
+     
+     },
+
+     /*newFunc: function(i, businessAddresses,masterInstance){
+          console.log("start i = " + i);
+          businessAddress = businessAddresses[i];
+          console.log(businessAddress);
+          masterInstance.getNameFromAddress(businessAddress).then(function (name) {
+               businessName = name;
+               console.log(businessName);
+               return masterInstance.getContractFromAddress(businessAddress);
+          }).then(function (contract){
+               businessContract = contract;
+               console.log(businessContract);
+          }).then(function(){
+               App.displayBusiness(
+                    businessName,
+                    businessAddress,
+                    businessContract
+               );
+               console.log("i = "+i);
+          }); 
+     },*/
+
+     displayBusiness: function(name, address, contract){
+          var businessRow = $('#businessRow');
+          var businessTemplate = $('#businessTemplate');
+          businessTemplate.find('.panel-title').text(name);
+          businessTemplate.find('.business-wallet').text(address);
+          businessTemplate.find('.business-contract').text(contract);
+          
+          //add this business to the placeholder
+          businessRow.append(businessTemplate.html());
+
      },
 
 
@@ -157,4 +276,21 @@ $(function() {
      $(window).load(function() {
           App.init();
      });
+     // placeholder for current account 
+     var _account;
+     
+     // set the interval
+     var accountInterval = setInterval(function () {
+     // check for new account information and display it
+     App.displayAccountInfo();
+
+     // check if current account is still the same, if not
+     if (_account != App.account) {
+               // load the new zombie list
+               //App.reloadZombies();
+               
+               // update the current account
+               _account = App.account;
+     }
+     }, 100);
 });

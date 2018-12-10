@@ -1,5 +1,5 @@
 {
-  "name": "SARegistry",
+  "name": "CreditRegister",
   "version": "1.0.0",
   "description": "",
   "main": "truffle.js",
@@ -16,6 +16,8 @@
     "lite-server": "^2.3.0"
   },
   "dependencies": {
+    "ipfs": "^0.33.1",
+    "ipfs-api": "^26.1.2",
     "web3": "^1.0.0-beta.36"
   }
 }

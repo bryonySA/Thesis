@@ -12,10 +12,10 @@ contract Master {
         histories, so they will need to be vetted first.
     */
     
-    //address[] public allBusinesses;          //An array of the address of all businesses loaded on the platform
+    address[] public allBusinesses;          //An array of the address of all businesses loaded on the platform. From here you can use the mappings to get their name and contract number
 
     mapping(address => address) businessAddressToContract;      //Maps the business wallet to the deployed contract
-    mapping(string => address) businessNameToAddress;          //Maps the business name to its wallet address                    
+    mapping(address => string) businessAddressToName;          //Maps the business address (unique) to its name                    
     mapping(address => bool) businessAddressExists;         //Maps the business address to boolean, allowing user to check if business exists
 
     event businessAdded(address _businessAddress, string _businessName, address _contractAddress);
@@ -37,10 +37,10 @@ contract Master {
         address contractAddress = address(newBusiness);
         //businessAddressToContract[_businessAddress] = new Business();
         
-        //allBusinesses.push(_businessAddress);
+        allBusinesses.push(_businessAddress);
         //businessExists[_businessName] = true;
         businessAddressExists[_businessAddress] = true;
-        businessNameToAddress[_businessName] = _businessAddress;
+        businessAddressToName[_businessAddress] = _businessName;
         emit businessAdded(_businessAddress, _businessName, contractAddress);
     }
 
@@ -52,6 +52,15 @@ contract Master {
 
     function getContractFromAddress(address _businessAddress) public view returns(address){
         return businessAddressToContract[_businessAddress];
+    }
+
+
+    function getNameFromAddress(address _businessAddress) public view returns(string){
+        return businessAddressToName[_businessAddress];
+    }
+
+    function getAllBusinesses() public view returns(address[]){
+        return allBusinesses;
     }
 
   /* 

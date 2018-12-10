@@ -60,7 +60,7 @@
       </div>
 
 <!-- Modal form to display a business -->
-<div class="modal fade" id="displayBusiness" role="dialog">
+<div class="modal fade" id="displayBusinessConsole" role="dialog">
     <div class="modal-dialog">
 
         <!-- Modal content-->
@@ -83,13 +83,48 @@
             </div>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-primary btn-success" data-dismiss="modal" onclick="App.displayBusiness(); return false;">Submit</button>
+            <button type="button" class="btn btn-primary btn-success" data-dismiss="modal" onclick="App.displayBusinessConsole(); return false;">Submit</button>
             <button type="button" class="btn" data-dismiss="modal">Close</button>
         </div>
         </div>
 
     </div>
 </div>
+
+<!-- Modal form to display all businesses -->
+<div class="modal fade" id="displayBusinesses" role="dialog">
+        <div class="modal-dialog">
+    
+            <!-- Modal content-->
+            <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Display a business</h4>
+            </div>
+            <div class="modal-body">
+    
+                <div class="row">
+                <div class="col-lg-12">
+                    <form>
+                    <div class="form-group">
+                        <label for="business_contract">Business Contract Address</label>
+                        <input type="text" class="form-control" id="BusinessContractAddress" placeholder="Enter the contract address of the business to display.">
+                    </div>
+                    </form>
+                </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary btn-success" data-dismiss="modal" onclick="App.displayBusinesses(); return false;">Submit</button>
+                <button type="button" class="btn" data-dismiss="modal">Close</button>
+            </div>
+            </div>
+    
+        </div>
+    </div>
+    
+    
+
 <!-- Modal form to add a customer -->
 <div class="modal fade" id="addCustomer" role="dialog">
     <div class="modal-dialog">
@@ -140,40 +175,41 @@
                <div class="row">
                <button class="btn btn-info btn-lg btn-create" data-toggle="modal" data-target="#addBusiness">Add a business</button>
                <button class="btn btn-info btn-lg btn-create" data-toggle="modal" data-target="#addCustomer">Add a customer</button>
-               <button class="btn btn-info btn-lg btn-create" data-toggle="modal" data-target="#displayBusiness">Display details in console</button>
+               <button class="btn btn-info btn-lg btn-create" data-toggle="modal" data-target="#displayBusinessConsole">Display details in console</button>
+               <button class="btn btn-info btn-lg btn-create" data-toggle="modal" data-target="#displayBusinesses">Display all businesses</button>
                </div>
+
+               <div id="businessRow" class="row">
+                <!-- BUSINESSES LOAD HERE -->
+                </div>
            </div>
+           <div id="businessTemplate" style="display: none;">
+                <div class="row-lg-12">
+                    <div class="panel panel-default panel-article">
+                    <div class="panel-heading">
+                        <h3 class="panel-title"></h3>
+                    </div>
+                    <div class="panel-body">
+                        <strong>Wallet ID</strong>:
+                        <span class="business-wallet"></span>
+                        <br/>
+                        <strong>Contract ID</strong>:
+                        <span class="business-contract"></span>
+                    </div>
+                    <div class="panel-footer">
+                        <button type="button" class="btn btn-primary btn-success btn-addCustomer" onclick="App.addCustomer(this); return false;">Add Customer</button>
+                    </div>
+                    </div>
+                </div>
+            </div>
+
      </div>
+
+     
 
         
 
 
-
-
-     <!--<div id="businessRow" class="row">-->
-        <!-- BUSINESSSES LOAD HERE -->
-    <!--</div>
-    </div>
-<div id="businessTemplate" style="display: none;">
-    <div class="row-lg-12">
-        <div class="panel panel-default panel-article">
-        <div class="panel-heading">
-            <h3 class="panel-title"></h3>
-        </div>
-        <div class="panel-body">
-            <strong>Name</strong>:
-            <span class="business-name"></span>
-            <br/>
-            <strong>Wallet Address</strong>:
-            <span class="business-address"></span>
-            <br/>
-            <strong>Contract Address</strong>:
-            <span class="business-contract"></span>
-            <br/>
-        </div>
-        </div>
-    </div>
-</div> -->
 
      <div id="footer" class="container">
           <nav class="navbar navbar-default navbar-fixed-bottom">
@@ -189,6 +225,7 @@
      <!-- Include all compiled plugins (below), or include individual files as needed -->
      <script src="js/bootstrap.min.js"></script>
      <script src="js/web3.min.js"></script>
+     <script src="https://unpkg.com/ipfs/dist/index.min.js"></script>
      <script src="js/truffle-contract.js"></script>
      <script src="js/app.js"></script>
 </body>
