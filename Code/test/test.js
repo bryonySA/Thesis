@@ -1,25 +1,39 @@
 var Business = artifacts.require("./Business.sol");
 var Master = artifacts.require("./Master.sol");
-
+var Lookup = artifacts.require("./Lookup.sol");
 // accounts[0] is CreditRegisters' Master Account
 
+//global test Variables - accounts can only be assigned after deployment
+var business_name1 = "Lumkani";
+var business_address1;
+var invalid_business_name = "Invalid";
+var invalid_business_address;
+var businessContractAddress;
+var masterAddress;
+var business_name2 = "SpazaShop";
+var business_address2;
+var customer_name1 = "Claire";
+//var customer_address1 = accounts[3];
+var lookupAddress;
 //Master contract test
 contract('Master', function(accounts) {
-    
-    //test Variables
-    var business_name = "Lumkani";
-    var business_address = accounts[1];
-    var invalid_business_name = "Invalid";
-    var invalid_business_address = accounts[9];
-    var businessContractAddress;
-    var masterAddress;
-    
+    business_address1 = accounts[1];
+    invalid_business_address = accounts[9];
+    business_address2 = accounts[2];
+
     it("should allow me to store the masterAddress", function(){
     return Master.deployed().then(function(instance){
         masterAddress = instance.address;
         console.log(masterAddress);
     });
     });
+
+    it("should allow me to store the lookupAddress", function(){
+        return Lookup.deployed().then(function(instance){
+            lookupAddress = instance.address;
+            console.log(lookupAddress);
+        });
+        });
 
     //actual tests
     //Check owner of master is set to account[0]
@@ -64,12 +78,12 @@ contract('Master', function(accounts) {
     //Check business is added with correct details
     it("should add a business", function() {
         return Master.deployed().then(function(instance) {
-            return instance.addBusiness(business_address, business_name);         
+            return instance.addBusiness(business_address1, business_name1);         
         }).then(function(receipt) {
             assert.equal(receipt.logs.length, 1, "an event should have been triggered");
             assert.equal(receipt.logs[0].event, "businessAdded", "event should be businessAdded");
-            assert.equal(receipt.logs[0].args._businessName, business_name, "business in event must be " + business_name);
-            assert.equal(receipt.logs[0].args._businessAddress, business_address, "business in event must be " + business_address);
+            assert.equal(receipt.logs[0].args._businessName, business_name1, "business in event must be " + business_name1);
+            assert.equal(receipt.logs[0].args._businessAddress, business_address1, "business in event must be " + business_address1);
             businessContractAddress = receipt.logs[0].args._contractAddress;
             //businessInstance = Business.at(businessContractAddress);
         });
@@ -78,7 +92,7 @@ contract('Master', function(accounts) {
     //Should not allow business to be added twice
     it("should not add a business if the wallet already exists", function() {
         return Master.deployed().then(function(instance) {
-            return instance.addBusiness(business_address, business_name);         
+            return instance.addBusiness(business_address1, business_name1);         
         }).then(assert.fail)
             .catch(function(error){
                 assert.include(
@@ -92,7 +106,7 @@ contract('Master', function(accounts) {
     //Should update address to contract mapping table
     it("should update the business address to contract mapping", function() {
         return Master.deployed().then(function(instance) {
-            return instance.getContractFromAddress(business_address);         
+            return instance.getContractFromAddress(business_address1);         
         }).then(function(contractAddress){
             assert.equal(contractAddress,businessContractAddress,"Address to contract mapping incorrect")
         });
@@ -129,7 +143,7 @@ contract('Master', function(accounts) {
     /*// After successful addition, the name should exist on master contract
     it("Business Name should exist", function() {
         return Master.deployed().then(function(instance) {
-            return instance.checkBusinessNameExists(business_name);         
+            return instance.checkBusinessNameExists(business_name1);         
         }).then(function(result) {
             assert.equal(true, result, "The business name should exist on the master contract");
         });
@@ -138,7 +152,7 @@ contract('Master', function(accounts) {
     // After successful addition, the address should exist on master contract
     it("Business Address should exist", function() {
         return Master.deployed().then(function(instance) {
-            return instance.checkBusinessAddressExists(business_address);         
+            return instance.checkBusinessAddressExists(business_address1);         
         }).then(function(result) {
             assert.equal(true, result, "The business address should exist on the master contract");
         });
@@ -149,7 +163,7 @@ contract('Master', function(accounts) {
     /*// Only Master can set ownership
         it("should only allow account[0] to set ownership", function(){
         return Business.at(businessContractAddress).then(function(instance){
-                instance.setOwnership(business_address, business_name,masterAddress,{'from' : accounts[8]});
+                instance.setOwnership(business_address1, business_name1,masterAddress,{'from' : accounts[8]});
         }).then(assert.fail)
         .catch(function(error){
             assert.include(
@@ -163,12 +177,12 @@ contract('Master', function(accounts) {
     // Ownership should be set to business wallet
     it("Business owner should be business wallet", function() {
         return Business.at(businessContractAddress).then(function(instance) {
-            return instance.setOwnership(business_address, business_name);
+            return instance.setOwnership(business_address1, business_name1);
         }).then(function(receipt) {
             assert.equal(receipt.logs.length, 1, "an event should have been triggered");
             assert.equal(receipt.logs[0].event, "ownershipSet", "event should be ownershipSet");
-            assert.equal(receipt.logs[0].args._businessName, business_name, "business in event must be " + business_name);
-            assert.equal(receipt.logs[0].args._businessAddress, business_address, "business in event must be " + business_address);
+            assert.equal(receipt.logs[0].args._businessName, business_name1, "business in event must be " + business_name1);
+            assert.equal(receipt.logs[0].args._businessAddress, business_address1, "business in event must be " + business_address1);
             assert.equal(receipt.logs[0].args._contractAddress, businessContractAddress, "contract address in event must be " + businessContractAddress);
         });
     });
@@ -178,7 +192,7 @@ contract('Master', function(accounts) {
         return Business.at(businessContractAddress).then(function(instance) {
             return instance.owner();       
         }).then(function(owner) {
-            assert.equal(owner, business_address, "The business name should be the business name");
+            assert.equal(owner, business_address1, "The business name should be the business name");
         });
     });
 
@@ -187,7 +201,7 @@ contract('Master', function(accounts) {
         return Business.at(businessContractAddress).then(function(instance) {
             return instance.businessName();       
         }).then(function(businessName) {
-            assert.equal(businessName, business_name, "The business name should be the business name");
+            assert.equal(businessName, business_name1, "The business name should be the business name");
         });
     });
 
@@ -204,7 +218,7 @@ contract('Master', function(accounts) {
     // Ownership can only be set once
     it("should only allow ownership to be set once", function(){
         return Business.at(businessContractAddress).then(function(instance){
-                return instance.setOwnership(business_address, business_name);
+                return instance.setOwnership(business_address1, business_name1);
         }).then(assert.fail)
         .catch(function(error){
             assert.include(
@@ -218,3 +232,7 @@ contract('Master', function(accounts) {
     // Customer creator is the business account
 
 });
+
+contract('Business', function(accounts){
+
+})

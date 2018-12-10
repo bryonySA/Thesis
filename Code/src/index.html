@@ -176,7 +176,7 @@
                <button class="btn btn-info btn-lg btn-create" data-toggle="modal" data-target="#addBusiness">Add a business</button>
                <button class="btn btn-info btn-lg btn-create" data-toggle="modal" data-target="#addCustomer">Add a customer</button>
                <button class="btn btn-info btn-lg btn-create" data-toggle="modal" data-target="#displayBusinessConsole">Display details in console</button>
-               <button class="btn btn-info btn-lg btn-create" data-toggle="modal" data-target="#displayBusinesses">Display all businesses</button>
+               <button class="btn btn-info btn-lg btn-create" data-toggle="modal" onclick="App.displayBusinesses(); return false;">Display all businesses</button>
                </div>
 
                <div id="businessRow" class="row">
@@ -196,9 +196,9 @@
                         <strong>Contract ID</strong>:
                         <span class="business-contract"></span>
                     </div>
-                    <div class="panel-footer">
+                    <!--  <div class="panel-footer">
                         <button type="button" class="btn btn-primary btn-success btn-addCustomer" onclick="App.addCustomer(this); return false;">Add Customer</button>
-                    </div>
+                    </div> -->
                     </div>
                 </div>
             </div>

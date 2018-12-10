@@ -14,4 +14,10 @@ contract Lookup {
         customerToBusinessList[_customerAddress].push(msg.sender);
     }
 
+    function checkCustomerExists(address _customerAddress) public view returns (bool) {
+        return (customerToBusinessList[_customerAddress].length != 0);
+    }
+
+
+
 }

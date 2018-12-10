@@ -80,7 +80,7 @@ App = {
      },
 
     addBusiness: function () {
-          console.log('button clicked');
+          console.log('Add Business button clicked');
           // get information from the modal
           var _businessName = $('#BusinessName').val();
           var _businessAddress = $('#BusinessAddress').val();
@@ -98,7 +98,7 @@ App = {
                     // passing the business name and the business wallet address
                     //masterAddress = instance.address;
                     //console.log('Master contract ID: '+masterAddress);
-                    console.log('Adding business (' + _businessName + ')');
+                    console.log('Adding business (' + _businessName + ') - Please check Metamask');
                     return instance.addBusiness(_businessAddress, _businessName, {
                          from: App.account,
                          gas: 5000000
@@ -107,14 +107,11 @@ App = {
           }).then(function (receipt) {
                console.log(receipt.logs[0].args._businessName + ' added');
                businessContractAddress = receipt.logs[0].args._contractAddress;
-               console.log('business contract address' + businessContractAddress);
+               console.log('Business contract address: ' + businessContractAddress);
                return businessContractAddress;
           }).then(function(contractAddress) {
                     App.setOwnership(contractAddress);
                     return contractAddress;
-          }).then(function(contractAddress){
-               //Display the details, but at this point owner might still be 0x0
-               App.displayBusiness(contractAddress);
           // log the error if there is one
           }).catch(function (error) {
                     console.log(error);
@@ -149,6 +146,8 @@ App = {
           // refresh account info
           App.displayAccountInfo();
           
+          var businessRow = $('#businessRow');
+          businessRow.empty();
           //define placeholder for contract
           var masterInstance;
           var businessName;
@@ -168,12 +167,12 @@ App = {
                          //businessRow.empty();
                          console.log("Array length "+businessAddresses.length);
                          //fill template for each business
-                         for (var i = 0; i < businessAddresses.length; i++){
                          //for (let i = 0; i < businessAddresses.length; i++){
+                         businessAddresses.forEach(businessAddress => {
                               //App.newFunc(i,businessAddresses, masterInstance);
-                         //[0,1,2].forEach(function(i){
-                              console.log("start i = " + i);
-                              businessAddress = businessAddresses[i];
+                         
+                              //console.log("start i = " + i);
+                              //businessAddress = businessAddresses[i];
                               console.log(businessAddress);
                               /*businessName = masterInstance.getNameFromAddress(businessAddress);
                               businessContract = masterInstance.getContractFromAddress(businessAddress);
@@ -182,7 +181,7 @@ App = {
                                    businessAddress,
                                    businessContract
                               );*/
-                              masterInstance.getNameFromAddress(businessAddress).then(function (name) {
+                              return masterInstance.getNameFromAddress(businessAddress).then(function (name) {
                                    businessName = name;
                                    console.log(businessName);
                                    return masterInstance.getContractFromAddress(businessAddress);
@@ -195,10 +194,11 @@ App = {
                                         businessAddress,
                                         businessContract
                                    );
-                                   console.log("i = "+i);
+                                   //console.log("i = "+i);
                               }); 
                          //});
-                         };
+                         //};
+                         });
                     });
 
                     App.loading =false;
@@ -251,7 +251,7 @@ App = {
           var _businessAddress = $('#BusinessAddress').val();
           
           return App.contracts.Business.at(contractAddress).then(function(instance){
-               console.log('Setting ownership');
+               console.log('Setting ownership - Please check Metamask');
                return instance.setOwnership(_businessAddress, _businessName, {
                     from:App.account,
                     gas:5000000
