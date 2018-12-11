@@ -10,7 +10,7 @@ import "./Lookup.sol";
 contract LookupInterface {
     function checkCustomerExists(address _customerAddress) public view returns(bool);
     function getCustomerBusinessList(address _customerAddress) public view returns (address[]);
-    function addBusinessToCustomerList(address _customerAddress) public;
+    function addBusinessToCustomerList(address _customerAddress,address _businessAddress) public;
 }
 
 contract Business {
@@ -21,10 +21,13 @@ contract Business {
     address[] allCustomers;
     //address public lookup;
 
-    mapping(address => int32) private customerToBalance; 
-    mapping(address => bool) private customerToActive; 
-    //address public masterWallet; // This stores the Master Wallet address so that we can access the functions
+    struct CustomerDetails{
+        string customerName;
+        int32 customerBalance;
+        bool customerActive;
+    }
 
+    mapping(address => CustomerDetails) customerWalletToDetails;
     //MasterInterface masterContract = MasterInterface(creator);
     //LookupInterface lookupContract = LookupInterface(lookup);
 
@@ -37,6 +40,10 @@ contract Business {
     event ownershipSet(address indexed _businessAddress, string _businessName, address _contractAddress);
     event customerAdded(string _customerName, address _customerAddress);
 
+        //////////////////////////////
+        /// BUSINESS SECTION ////////
+        ////////////////////////////
+
     function setOwnership(address _businessAddress, string _businessName) public{
         require(assigned == false, "Contract has already been assigned ownership");
         owner = _businessAddress;
@@ -45,24 +52,39 @@ contract Business {
         emit ownershipSet(_businessAddress, _businessName, this);
     }
 
-    function addCustomer(address _customerAddress, string _customerName, address _lookupContractAddress, int32 _openingBalance) public onlyBusiness() {
-        require(customerToActive[_customerAddress] != true, "This customer is already active. Please use amend function");
+        //////////////////////////////
+        /// CUSTOMER SECTION ////////
+        ////////////////////////////
+
+    function addCustomer(address _customerAddress,
+        string _customerName, 
+        address _lookupContractAddress, 
+        int32 _openingBalance
+        ) public {
+        require(owner == msg.sender, "Only the business owner can add customers");
+        require(customerWalletToDetails[_customerAddress].customerActive != true, "This customer is already active. Please use amend function");
+        require(customerWalletToDetails[_customerAddress].customerBalance == 0, 
+            "This customer is inactive but has a non-zero balance. Please use amend function");
 
         //It doesn't matter if the customer already exists on the platform - either create a new array or add to existing array
         LookupInterface lookupContract = LookupInterface(_lookupContractAddress);
-        lookupContract.addBusinessToCustomerList(_customerAddress);
-
-        customerToActive[_customerAddress] = true;
-        customerToBalance[_customerAddress] = _openingBalance;
+        lookupContract.addBusinessToCustomerList(_customerAddress, msg.sender);
+        
+        customerWalletToDetails[_customerAddress] = CustomerDetails(_customerName, _openingBalance,true);
+        allCustomers.push(_customerAddress);
 
         emit customerAdded(_customerName, _customerAddress);
     }
-    
 
-    modifier onlyBusiness(){
+    function getAllCustomers() public view returns(address[]){
+        return allCustomers;
+    }
+
+
+    /*modifier onlyBusiness(){
         require(msg.sender == owner, "Only the business owner can call this function");
         _;
-    }
+    }*/
 
     //modifier onlyABusiness(){
       //  required(checkBusinessAddressExists[msg.sender] == true,"Only businesses already loaded on the platform can call this function");

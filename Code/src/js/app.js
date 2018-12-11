@@ -136,8 +136,6 @@ App = {
           businessRow.empty();
           //define placeholder for contract
           var masterInstance;
-          var businessName;
-          var businessContract;
 
           // check if the account is the master wallet
           

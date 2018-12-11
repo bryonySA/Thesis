@@ -9,12 +9,13 @@ var business_address1;
 var invalid_business_name = "Invalid";
 var invalid_business_address;
 var business_contract_address1;
-var masterAddress;
+var masterContractAddress;
 var business_name2 = "SpazaShop";
 var business_address2;
+var business_contract_address2;
 var customer_name1 = "Claire";
-//var customer_address1 = accounts[3];
-var lookupAddress;
+var customer_address1;
+var lookupContractAddress;
 var emptyBusinessDetails;
 
 //Master contract test
@@ -24,21 +25,22 @@ contract('Master', function(accounts) {
     business_address1 = accounts[1];
     invalid_business_address = accounts[9];
     business_address2 = accounts[2];
+    master_account = accounts[0];
 
     // get details for other tests
-    it("should allow me to store the masterAddress", function(){
+    it("should allow me to store the masterContractAddress", function(){
     return Master.deployed().then(function(instance){
-        masterAddress = instance.address;
+        masterContractAddress = instance.address;
         return instance.getBusinessDetails(business_address1).then(function(emptyDetails){
             emptyBusinessDetails = emptyDetails;
         });
     });
     });
 
-    it("should allow me to store the lookupAddress", function(){
+    it("should allow me to store the lookupContractAddress", function(){
         return Lookup.deployed().then(function(instance){
-            lookupAddress = instance.address;
-            console.log(lookupAddress);
+            lookupContractAddress = instance.address;
+            console.log(lookupContractAddress);
         });
         });
 
@@ -50,15 +52,15 @@ contract('Master', function(accounts) {
         return Master.deployed().then(function(instance){
             return instance.owner();
         }).then(function(owner){
-            assert.equal(owner, accounts[0],"owner on Master contract wasn't properly set");
+            assert.equal(owner, master_account,"owner on Master contract wasn't properly set");
         });
     });    
 
     // Check that account[1] cannot add a business
     // https://ethereum.stackexchange.com/questions/9103/how-can-you-handle-an-expected-throw-in-a-contract-test-using-truffle-and-ethere
-    it("should only let account[0] add a business", function(){
+    it("should only let master account add a business", function(){
         return Master.deployed().then(function(instance){
-                return instance.addBusiness(invalid_business_address, invalid_business_name,{'from' : accounts[1]});
+                return instance.addBusiness(invalid_business_address, invalid_business_name,{'from' : business_address1});
         }).then(assert.fail)
         .catch(function(error){
             assert.include(
@@ -92,6 +94,20 @@ contract('Master', function(accounts) {
         });
     });
 
+    //Should allow second business to be added if wallet address is different
+    it("should add a second business and emit businessAdded event if address is different", function() {
+        return Master.deployed().then(function(instance) {
+            return instance.addBusiness(business_address2, business_name2);         
+        }).then(function(receipt) {
+            assert.equal(receipt.logs.length, 1, "an event should have been triggered");
+            assert.equal(receipt.logs[0].event, "businessAdded", "event should be businessAdded");
+            assert.equal(receipt.logs[0].args._businessName, business_name2, "business in event must be " + business_name2);
+            assert.equal(receipt.logs[0].args._businessAddress, business_address2, "business in event must be " + business_address2);
+            business_contract_address2 = receipt.logs[0].args._contractAddress;
+        });
+    });
+
+
     //Should not allow business to be added twice
     it("should not add a business if the wallet already exists", function() {
         return Master.deployed().then(function(instance) {
@@ -104,16 +120,25 @@ contract('Master', function(accounts) {
                 "Error should be thrown wallet already exists");
             });
     });
-  
+
+    //Should add both businesses to allBusinesses
+    it("should add both businesses to allBusinesses array", function() {
+        return Master.deployed().then(function(instance) {
+            return instance.getAllBusinesses();         
+        }).then(function(result){
+            assert.equal(result[0],business_address1,"First business should be added to allBusinesses array");
+            assert.equal(result[1],business_address2,"Second business should be added to allBusinesses array");
+        });
+    });
 
     //Should update the business details
     it("should update the business address to contract mapping", function() {
         return Master.deployed().then(function(instance) {
             return instance.getBusinessDetails(business_address1);         
         }).then(function(result){
-            assert.equal(result[0],business_contract_address1,"Address to contract mapping incorrect")
-            assert.equal(result[1],business_name1,"Address to name mapping incorrect")
-            assert.equal(result[2],true,"Address to active indicator mapping incorrect")
+            assert.equal(result[0],business_contract_address1,"Address to contract mapping incorrect");
+            assert.equal(result[1],business_name1,"Address to name mapping incorrect");
+            assert.equal(result[2],true,"Address to active indicator mapping incorrect");
         });
     });
 
@@ -123,7 +148,7 @@ contract('Master', function(accounts) {
             return instance.creator();
         }).then(function(creator){
             console.log('business creator: ' + creator);
-            assert.equal(creator,masterAddress,"Creator must be master account");
+            assert.equal(creator,masterContractAddress,"Creator must be master account");
         });
     });
 
@@ -136,8 +161,8 @@ contract('Master', function(accounts) {
         });
     });
 
-    // Correct event should be emitted when ownership set
-    it("should emit ownershipSet event when ownership has been set", function() {
+    // Correct event should be emitted when ownership set for each business
+    it("should emit ownershipSet event when ownership has been set for business1", function() {
         return Business.at(business_contract_address1).then(function(instance) {
             return instance.setOwnership(business_address1, business_name1);
         }).then(function(receipt) {
@@ -148,8 +173,19 @@ contract('Master', function(accounts) {
             assert.equal(receipt.logs[0].args._contractAddress, business_contract_address1, "contract address in event must be " + business_contract_address1);
         });
     });
+    it("should emit ownershipSet event when ownership has been set for business2", function() {
+        return Business.at(business_contract_address2).then(function(instance) {
+            return instance.setOwnership(business_address2, business_name2);
+        }).then(function(receipt) {
+            assert.equal(receipt.logs.length, 1, "an event should have been triggered");
+            assert.equal(receipt.logs[0].event, "ownershipSet", "event should be ownershipSet");
+            assert.equal(receipt.logs[0].args._businessName, business_name2, "business in event must be " + business_name2);
+            assert.equal(receipt.logs[0].args._businessAddress, business_address2, "business in event must be " + business_address2);
+            assert.equal(receipt.logs[0].args._contractAddress, business_contract_address2, "contract address in event must be " + business_contract_address2);
+        });
+    });
 
-    // Ownership should be set to business wallet
+    // Ownership should be set to business wallet for business1
     it("should set owner to Business Address", function() {
         return Business.at(business_contract_address1).then(function(instance) {
             return instance.owner();       
@@ -157,6 +193,7 @@ contract('Master', function(accounts) {
             assert.equal(owner, business_address1, "The owner should be the business address");
         });
     });
+
 
     // Business name must be set correctly
     it("should store Business Name correctly", function() {
@@ -193,8 +230,113 @@ contract('Master', function(accounts) {
 
     // Customer creator is the business account
 
-});
+//});
 
-contract('Business', function(accounts){
+//contract('Business', function(accounts){
+    //business_address1 = accounts[1];
+    //business_address2 = accounts[2];
+    customer_address1 = accounts[3];
+    opening_balance1 = 60;
+
+    // Only the business owner can add a client to the list
+    it("should not allow any account other than business owner to add customer to business list", function(){
+        return Business.at(business_contract_address1).then(function(instance){
+                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress, opening_balance1,{'from' : business_address2});
+        }).then(assert.fail)
+        .catch(function(error){
+            assert.include(
+                error.message,
+                "Only the business owner can add customers",
+                "Error should be thrown when account[2] creates contract for business1");
+            });
+    });
+
+    // Customer should not exist on lookup contract so business list should be empty
+    it("should not have added any businesses to the customers list", function(){
+        return Lookup.deployed().then(function(instance){
+                return instance.getCustomerBusinessList(customer_address1);
+        }).then(function(businessList) {
+            assert.equal(businessList.length, 0, "an empty array should be returned");
+        });
+    });
+
+    // Business owner can add a client to the list
+    it("should allow business owner to add customer to business list", function(){
+        return Business.at(business_contract_address1).then(function(instance){
+                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress, opening_balance1,{'from' : business_address1});
+        }).then(function(receipt) {
+            assert.equal(receipt.logs.length, 1, "an event should have been triggered");
+            assert.equal(receipt.logs[0].event, "customerAdded", "event should be customerAdded");
+            assert.equal(receipt.logs[0].args._customerName, customer_name1, "customer name in event must be " + customer_name1);
+            assert.equal(receipt.logs[0].args._customerAddress, customer_address1, "custmer address in event must be " + customer_address1);
+        });
+    });
+
+    // Customer should appear on allCustomers list for business1
+    it("should add customer to business1's list of customers", function(){
+        return Business.at(business_contract_address1).then(function(instance){
+                return instance.getAllCustomers().then(function(customers) {
+                    assert.equal(customers.length, 1, "allCustomers array should have 1 element");
+                    assert.equal(customers[0], customer_address1, "customer address should be on list");
+        });
+    });
+    });
+
+    // Business2's customer list should be empty
+    it("should not return any customers for business2 yet", function(){
+        return Business.at(business_contract_address2).then(function(instance){
+            return instance.getAllCustomers().then(function(customers) {
+                assert.equal(customers.length, 0, "allCustomers array should be empty for business2");
+            });
+    });
+    });
+    
+    // Customer can only be added to the same business list once
+    it("should only allow customer to be added to business list once", function(){
+        return Business.at(business_contract_address1).then(function(instance){
+                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress, opening_balance1,{'from' : business_address1});
+            }).then(assert.fail)
+            .catch(function(error){
+                assert.include(
+                    error.message,
+                    "This customer is already active. Please use amend function",
+                    "Error should be thrown if customer is already active on the business list or has a non-zero balance");
+                });
+    });
+
+    // Customer should exist on lookup contract and list should have business1 on it
+    it("should include business1 on the customers list", function(){
+        return Lookup.deployed().then(function(instance){
+                return instance.getCustomerBusinessList(customer_address1);
+        }).then(function(businessList) {
+            assert.equal(businessList.length, 1, "only one business should be returned");
+            assert.equal(businessList[0], business_address1, "only one business should be returned");
+        });
+    });
+
+    // Customer can be added to a second business list
+    it("should allow for a customer to be added to a different business list", function(){
+        return Business.at(business_contract_address2).then(function(instance){
+                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress, opening_balance1+10,{'from' : business_address2});
+            }).then(function(receipt) {
+                assert.equal(receipt.logs.length, 1, "an event should have been triggered");
+                assert.equal(receipt.logs[0].event, "customerAdded", "event should be customerAdded");
+                assert.equal(receipt.logs[0].args._customerName, customer_name1, "customer name in event must be " + customer_name1);
+                assert.equal(receipt.logs[0].args._customerAddress, customer_address1, "custmer address in event must be " + customer_address1);
+            });
+    });
+
+    // Customer should exist on lookup contract and list should have business1 and business2 on it
+    it("should include business1 and business2 on the customers list", function(){
+        return Lookup.deployed().then(function(instance){
+                return instance.getCustomerBusinessList(customer_address1);
+        }).then(function(businessList) {
+            assert.equal(businessList.length, 2, "only one business should be returned");
+            assert.equal(businessList[0], business_address1, "only one business should be returned");
+            assert.equal(businessList[1], business_address2, "only one business should be returned");
+        });
+    });
+
+
 
 })
