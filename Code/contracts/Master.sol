@@ -20,7 +20,8 @@ contract Master {
 
     mapping(address => BusinessDetails) businessAddressToDetails;
 
-    address[] allBusinesses;          //An array of the address of all businesses loaded on the platform. From here you can use the mappings to get their name and contract number
+    address[] allBusinesses;          //An array of the address of all businesses loaded on the platform. 
+                                        // From here you can use the mappings to get their name and contract number
 
     event businessAdded(address _businessAddress, string _businessName, address _contractAddress);
 
@@ -29,6 +30,7 @@ contract Master {
     constructor() public{
         owner = msg.sender;
     }
+
 
     function addBusiness(address _businessAddress, string _businessName) public {
         require(msg.sender == owner, "Only CreditRegister can add businesses.");
@@ -42,6 +44,7 @@ contract Master {
         allBusinesses.push(_businessAddress);
         emit businessAdded(_businessAddress, _businessName, contractAddress);
     }
+
 
     function getBusinessDetails(address _businessAddress) public view returns (
         address businessContractAddress,
