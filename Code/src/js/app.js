@@ -1,11 +1,3 @@
-
-// Code to link to IPFS 
-// Must run npm install --save ipfs-api first
-//https://medium.com/@sebinatx/building-a-fully-decentralized-user-profile-dapp-on-ethereum-and-ipfs-e55afac35718
-//https://www.npmjs.com/package/ipfs-api
-//var ipfsAPI = require('ipfs-api')
-//var ipfs = ipfsAPI({host:'localhost',port: '5001',protocol:'http'})
-
 App = {
      web3Provider: null,
      contracts: {},
@@ -14,10 +6,6 @@ App = {
 
      //NB: Make sure you've run npm install web3
      init: function() {
-          //ipfs.id(function(err, res) {
-          //     if (err) throw err
-          //     console.log('Connected to IPFS node!', res.id, res.agentVersion, res.protocolVersion);
-           //    });
           return App.initWeb3();
      },
 
@@ -51,12 +39,13 @@ App = {
                App.contracts.Business.setProvider(App.web3Provider);
            });
 
-          //$.getJSON('Lookup.json', function(LookupArtifact) {
-            //   App.contracts.Lookup = TruffleContract(LookupArtifact);
-            //   App.contracts.Lookup.setProvider(App.web3Provider);
-           //});
+          $.getJSON('Lookup.json', function(LookupArtifact) {
+               App.contracts.Lookup = TruffleContract(LookupArtifact);
+               App.contracts.Lookup.setProvider(App.web3Provider);
+          });
 
      },
+     
 
      displayAccountInfo: function () {
           // get current account information
@@ -84,8 +73,8 @@ App = {
           // get information from the modal
           var _businessName = $('#BusinessName').val();
           var _businessAddress = $('#BusinessAddress').val();
-          //var masterAddress;
-          // if the name was not provided
+
+          // if the name or valid address was not provided
           if ((_businessName.trim() == '') || (web3.isAddress(_businessAddress)!= true)) {
                     // we cannot add a business
                     console.log('Cannot load business because name or address is invalid')
@@ -94,16 +83,13 @@ App = {
 
           // get the instance of the master contract
           App.contracts.Master.deployed().then(function (instance) {
+                    console.log('Adding business (' + _businessName + ') - Please check Metamask');
                     // call the addBusiness function, 
                     // passing the business name and the business wallet address
-                    //masterAddress = instance.address;
-                    //console.log('Master contract ID: '+masterAddress);
-                    console.log('Adding business (' + _businessName + ') - Please check Metamask');
                     return instance.addBusiness(_businessAddress, _businessName, {
                          from: App.account,
                          gas: 5000000
                     }); 
-                    //console.log(instance.checkBusinessAddressExists());
           }).then(function (receipt) {
                console.log(receipt.logs[0].args._businessName + ' added');
                businessContractAddress = receipt.logs[0].args._contractAddress;
@@ -136,7 +122,7 @@ App = {
      },
 
      //This displays all business details linked to the master account if the master account is signed in
-     displayBusinesses: function(){
+     displayActiveBusinesses: function(){
           // avoid reentry
           if (App.loading) {
                return;
@@ -152,7 +138,7 @@ App = {
           var masterInstance;
           var businessName;
           var businessContract;
-          var businessAddress;
+
           // check if the account is the master wallet
           
           return App.contracts.Master.deployed().then(function(instance){
@@ -160,44 +146,20 @@ App = {
                return instance.owner();
            }).then(function (owner) { 
                if (owner == App.account){
-                    console.log("Displaying businesses");
-                    // return masterInstance.getAllBusinesses().then(function(businessAddresses) {
+                    console.log("Displaying active businesses");
                     masterInstance.getAllBusinesses().then(function(businessAddresses) {
-                         //var businessRow = $('#businessRow');
-                         //businessRow.empty();
                          console.log("Array length "+businessAddresses.length);
-                         //fill template for each business
-                         //for (let i = 0; i < businessAddresses.length; i++){
                          businessAddresses.forEach(businessAddress => {
-                              //App.newFunc(i,businessAddresses, masterInstance);
-                         
-                              //console.log("start i = " + i);
-                              //businessAddress = businessAddresses[i];
                               console.log(businessAddress);
-                              /*businessName = masterInstance.getNameFromAddress(businessAddress);
-                              businessContract = masterInstance.getContractFromAddress(businessAddress);
-                              App.displayBusiness(
-                                   businessName,
-                                   businessAddress,
-                                   businessContract
-                              );*/
-                              return masterInstance.getNameFromAddress(businessAddress).then(function (name) {
-                                   businessName = name;
-                                   console.log(businessName);
-                                   return masterInstance.getContractFromAddress(businessAddress);
-                              }).then(function (contract){
-                                   businessContract = contract;
-                                   console.log(businessContract);
-                              }).then(function(){
-                                   App.displayBusiness(
-                                        businessName,
-                                        businessAddress,
-                                        businessContract
-                                   );
-                                   //console.log("i = "+i);
+                              return masterInstance.getBusinessDetails(businessAddress).then(function (businessDetails) {
+                                   if (businessDetails[2] == true){
+                                        App.displayBusiness(
+                                             businessDetails[1],
+                                             businessAddress,
+                                             businessDetails[0]
+                                        );
+                                   }
                               }); 
-                         //});
-                         //};
                          });
                     });
 
@@ -212,26 +174,6 @@ App = {
      
      },
 
-     /*newFunc: function(i, businessAddresses,masterInstance){
-          console.log("start i = " + i);
-          businessAddress = businessAddresses[i];
-          console.log(businessAddress);
-          masterInstance.getNameFromAddress(businessAddress).then(function (name) {
-               businessName = name;
-               console.log(businessName);
-               return masterInstance.getContractFromAddress(businessAddress);
-          }).then(function (contract){
-               businessContract = contract;
-               console.log(businessContract);
-          }).then(function(){
-               App.displayBusiness(
-                    businessName,
-                    businessAddress,
-                    businessContract
-               );
-               console.log("i = "+i);
-          }); 
-     },*/
 
      displayBusiness: function(name, address, contract){
           var businessRow = $('#businessRow');
