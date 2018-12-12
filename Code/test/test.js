@@ -236,12 +236,12 @@ contract('Master', function(accounts) {
     //business_address1 = accounts[1];
     //business_address2 = accounts[2];
     customer_address1 = accounts[3];
-    opening_balance1 = 60;
+    //opening_balance1 = 60;
 
     // Only the business owner can add a client to the list
     it("should not allow any account other than business owner to add customer to business list", function(){
         return Business.at(business_contract_address1).then(function(instance){
-                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress, opening_balance1,{'from' : business_address2});
+                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress,{'from' : business_address2});
         }).then(assert.fail)
         .catch(function(error){
             assert.include(
@@ -263,7 +263,7 @@ contract('Master', function(accounts) {
     // Business owner can add a client to the list
     it("should allow business owner to add customer to business list", function(){
         return Business.at(business_contract_address1).then(function(instance){
-                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress, opening_balance1,{'from' : business_address1});
+                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress,{'from' : business_address1});
         }).then(function(receipt) {
             assert.equal(receipt.logs.length, 1, "an event should have been triggered");
             assert.equal(receipt.logs[0].event, "customerAdded", "event should be customerAdded");
@@ -294,7 +294,7 @@ contract('Master', function(accounts) {
     // Customer can only be added to the same business list once
     it("should only allow customer to be added to business list once", function(){
         return Business.at(business_contract_address1).then(function(instance){
-                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress, opening_balance1,{'from' : business_address1});
+                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress,{'from' : business_address1});
             }).then(assert.fail)
             .catch(function(error){
                 assert.include(
@@ -317,7 +317,7 @@ contract('Master', function(accounts) {
     // Customer can be added to a second business list
     it("should allow for a customer to be added to a different business list", function(){
         return Business.at(business_contract_address2).then(function(instance){
-                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress, opening_balance1+10,{'from' : business_address2});
+                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress,{'from' : business_address2});
             }).then(function(receipt) {
                 assert.equal(receipt.logs.length, 1, "an event should have been triggered");
                 assert.equal(receipt.logs[0].event, "customerAdded", "event should be customerAdded");
@@ -325,6 +325,7 @@ contract('Master', function(accounts) {
                 assert.equal(receipt.logs[0].args._customerAddress, customer_address1, "custmer address in event must be " + customer_address1);
             });
     });
+
 
     // Customer should exist on lookup contract and list should have business1 and business2 on it
     it("should include business1 and business2 on the customers list", function(){

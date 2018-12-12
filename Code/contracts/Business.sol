@@ -58,8 +58,7 @@ contract Business {
 
     function addCustomer(address _customerAddress,
         string _customerName, 
-        address _lookupContractAddress, 
-        int32 _openingBalance
+        address _lookupContractAddress
         ) public {
         require(owner == msg.sender, "Only the business owner can add customers");
         require(customerWalletToDetails[_customerAddress].customerActive != true, "This customer is already active. Please use amend function");
@@ -70,7 +69,8 @@ contract Business {
         LookupInterface lookupContract = LookupInterface(_lookupContractAddress);
         lookupContract.addBusinessToCustomerList(_customerAddress, msg.sender);
         
-        customerWalletToDetails[_customerAddress] = CustomerDetails(_customerName, _openingBalance,true);
+        //The opening balance must be 0 as the business needs to upload an invoice or receipt before changing the balance
+        customerWalletToDetails[_customerAddress] = CustomerDetails(_customerName, 0,true);
         allCustomers.push(_customerAddress);
 
         emit customerAdded(_customerName, _customerAddress);
