@@ -300,6 +300,7 @@ App = {
                console.log(receipt.logs[0].args._customerName + ' added');
                console.log(receipt.logs[0].args._customerAddress + ' added');
                console.log(receipt.logs[0].args._businessWalletAddress + ' added');
+               App.displayActiveCustomers();
                // log the error if there is one
           }).catch(function (error) {
                console.log(error);
