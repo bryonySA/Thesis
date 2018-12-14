@@ -18,12 +18,12 @@ contract Master {
         bool businessActive;
     }
 
-    mapping(address => BusinessDetails) businessAddressToDetails;
+    mapping(address => BusinessDetails) businessWalletAddressToDetails;
 
     address[] allBusinesses;          //An array of the address of all businesses loaded on the platform. 
                                         // From here you can use the mappings to get their name and contract number
 
-    event businessAdded(address _businessAddress, string _businessName, address _contractAddress);
+    event businessAdded(address _businessWalletAddress, string _businessName, address _contractAddress);
 
     address public owner;
 
@@ -32,32 +32,36 @@ contract Master {
     }
 
 
-    function addBusiness(address _businessAddress, string _businessName) public {
+    function addBusiness(address _businessWalletAddress, string _businessName) public {
         require(msg.sender == owner, "Only CreditRegister can add businesses.");
         //require(businessExists[_businessName] != true, "Business name already exists.");
-        //require(businessAddressExists[_businessAddress] != true, "Business wallet already exists.");
-        require(businessAddressToDetails[_businessAddress].businessActive != true, "Business wallet already exists.");
+        //require(businessAddressExists[_businessWalletAddress] != true, "Business wallet already exists.");
+        require(businessWalletAddressToDetails[_businessWalletAddress].businessActive != true, "Business wallet already exists.");
 
         Business newBusiness = new Business();
-        address contractAddress = address(newBusiness);
-        businessAddressToDetails[_businessAddress] = BusinessDetails(contractAddress, _businessName,true);
-        allBusinesses.push(_businessAddress);
-        emit businessAdded(_businessAddress, _businessName, contractAddress);
+        address businessContractAddress = address(newBusiness);
+        businessWalletAddressToDetails[_businessWalletAddress] = BusinessDetails(businessContractAddress, _businessName,true);
+        allBusinesses.push(_businessWalletAddress);
+        emit businessAdded(_businessWalletAddress, _businessName, businessContractAddress);
     }
 
 
-    function getBusinessDetails(address _businessAddress) public view returns (
+    function getBusinessDetails(address _businessWalletAddress) public view returns (
         address businessContractAddress,
         string businessName,
         bool businessActive
     ){
-        return (businessAddressToDetails[_businessAddress].businessContractAddress,
-            businessAddressToDetails[_businessAddress].businessName,
-            businessAddressToDetails[_businessAddress].businessActive);
+        return (businessWalletAddressToDetails[_businessWalletAddress].businessContractAddress,
+            businessWalletAddressToDetails[_businessWalletAddress].businessName,
+            businessWalletAddressToDetails[_businessWalletAddress].businessActive);
     }
 
 
     function getAllBusinesses() public view returns(address[]){
         return allBusinesses;
+    }
+
+    function setActiveFlag(address _businessWalletAddress, bool _businessActive) public {
+        businessWalletAddressToDetails[_businessWalletAddress].businessActive = _businessActive;
     }
 }

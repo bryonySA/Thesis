@@ -89,7 +89,7 @@ contract('Master', function(accounts) {
             assert.equal(receipt.logs.length, 1, "an event should have been triggered");
             assert.equal(receipt.logs[0].event, "businessAdded", "event should be businessAdded");
             assert.equal(receipt.logs[0].args._businessName, business_name1, "business in event must be " + business_name1);
-            assert.equal(receipt.logs[0].args._businessAddress, business_address1, "business in event must be " + business_address1);
+            assert.equal(receipt.logs[0].args._businessWalletAddress, business_address1, "business in event must be " + business_address1);
             business_contract_address1 = receipt.logs[0].args._contractAddress;
         });
     });
@@ -102,7 +102,7 @@ contract('Master', function(accounts) {
             assert.equal(receipt.logs.length, 1, "an event should have been triggered");
             assert.equal(receipt.logs[0].event, "businessAdded", "event should be businessAdded");
             assert.equal(receipt.logs[0].args._businessName, business_name2, "business in event must be " + business_name2);
-            assert.equal(receipt.logs[0].args._businessAddress, business_address2, "business in event must be " + business_address2);
+            assert.equal(receipt.logs[0].args._businessWalletAddress, business_address2, "business in event must be " + business_address2);
             business_contract_address2 = receipt.logs[0].args._contractAddress;
         });
     });
@@ -169,7 +169,7 @@ contract('Master', function(accounts) {
             assert.equal(receipt.logs.length, 1, "an event should have been triggered");
             assert.equal(receipt.logs[0].event, "ownershipSet", "event should be ownershipSet");
             assert.equal(receipt.logs[0].args._businessName, business_name1, "business in event must be " + business_name1);
-            assert.equal(receipt.logs[0].args._businessAddress, business_address1, "business in event must be " + business_address1);
+            assert.equal(receipt.logs[0].args._businessWalletAddress, business_address1, "business in event must be " + business_address1);
             assert.equal(receipt.logs[0].args._contractAddress, business_contract_address1, "contract address in event must be " + business_contract_address1);
         });
     });
@@ -180,7 +180,7 @@ contract('Master', function(accounts) {
             assert.equal(receipt.logs.length, 1, "an event should have been triggered");
             assert.equal(receipt.logs[0].event, "ownershipSet", "event should be ownershipSet");
             assert.equal(receipt.logs[0].args._businessName, business_name2, "business in event must be " + business_name2);
-            assert.equal(receipt.logs[0].args._businessAddress, business_address2, "business in event must be " + business_address2);
+            assert.equal(receipt.logs[0].args._businessWalletAddress, business_address2, "business in event must be " + business_address2);
             assert.equal(receipt.logs[0].args._contractAddress, business_contract_address2, "contract address in event must be " + business_contract_address2);
         });
     });
@@ -241,7 +241,7 @@ contract('Master', function(accounts) {
     // Only the business owner can add a client to the list
     it("should not allow any account other than business owner to add customer to business list", function(){
         return Business.at(business_contract_address1).then(function(instance){
-                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress,{'from' : business_address2});
+                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress, masterContractAddress, {'from' : business_address2});
         }).then(assert.fail)
         .catch(function(error){
             assert.include(
@@ -263,7 +263,7 @@ contract('Master', function(accounts) {
     // Business owner can add a client to the list
     it("should allow business owner to add customer to business list", function(){
         return Business.at(business_contract_address1).then(function(instance){
-                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress,{'from' : business_address1});
+                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress, masterContractAddress, {'from' : business_address1});
         }).then(function(receipt) {
             assert.equal(receipt.logs.length, 1, "an event should have been triggered");
             assert.equal(receipt.logs[0].event, "customerAdded", "event should be customerAdded");
@@ -294,7 +294,7 @@ contract('Master', function(accounts) {
     // Customer can only be added to the same business list once
     it("should only allow customer to be added to business list once", function(){
         return Business.at(business_contract_address1).then(function(instance){
-                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress,{'from' : business_address1});
+                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress, masterContractAddress, {'from' : business_address1});
             }).then(assert.fail)
             .catch(function(error){
                 assert.include(
@@ -317,7 +317,7 @@ contract('Master', function(accounts) {
     // Customer can be added to a second business list
     it("should allow for a customer to be added to a different business list", function(){
         return Business.at(business_contract_address2).then(function(instance){
-                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress,{'from' : business_address2});
+                return instance.addCustomer(customer_address1, customer_name1, lookupContractAddress, masterContractAddress, {'from' : business_address2});
             }).then(function(receipt) {
                 assert.equal(receipt.logs.length, 1, "an event should have been triggered");
                 assert.equal(receipt.logs[0].event, "customerAdded", "event should be customerAdded");
@@ -338,6 +338,22 @@ contract('Master', function(accounts) {
         });
     });
 
+    //Business can be deactivated
+
+    //Inactive business can't add customer
+
+    // Get Customer Details works
+    it("should return customer details", function(){
+        return  Business.at(business_contract_address2).then(function(instance){
+            return instance.getCustomerDetails(customer_address1);
+        }).then(function(details) {
+            console.log(details);
+            console.log(details[1].toNumber());
+            assert.equal(details[0], customer_name1, "customer name should be stored");
+            assert.equal(details[1], 0, "customer balance should be stored");
+            assert.equal(details[2], true, "customer active should be stored");
+        });
+    });
 
 
 })
