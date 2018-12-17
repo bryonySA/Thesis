@@ -37,6 +37,7 @@ contract Business {
 
     event ownershipSet(address indexed _businessWalletAddress, string _businessName, address _contractAddress);
     event customerAdded(string _customerName, address _customerAddress, address _businessWalletAddress);
+    event customerInvoiced(address _customerAddress, string _ipfsHash, int _customerBalance);
 
         //////////////////////////////
         /// BUSINESS SECTION ////////
@@ -60,7 +61,17 @@ contract Business {
         bool customerActive;
     }
 
+    struct documentDetails{
+        string ipfsHash;
+        int amount;
+        string dueDate;
+        // if amt < 0 then invoice, if > 0 receipt
+    }
+
     mapping(address => CustomerDetails) customerAddressToDetails;
+    //mapping(address => string[]) customerAddressToInvoices;
+
+    mapping(address => string[]) customerAddressToInvoices;
 
     function addCustomer(address _customerAddress,
         string _customerName, 
@@ -98,6 +109,54 @@ contract Business {
         return (customerAddressToDetails[_customerAddress].customerName,
             customerAddressToDetails[_customerAddress].customerBalance,
             customerAddressToDetails[_customerAddress].customerActive);
+    }
+
+    function getCustomerInvoicesLength(address _customerAddress) public view returns (uint){
+
+        return customerAddressToInvoices[_customerAddress].length;
+    }
+
+    function getCustomerInvoices(address _customerAddress, uint index) public view returns (string){
+
+        return customerAddressToInvoices[_customerAddress][index-1];
+    }
+
+    function invoiceCustomer(address _customerAddress,
+        int _invoiceAmount, 
+        string _ipfsHash
+        ) public {
+        require(owner == msg.sender, "Only the business owner can invoice customers");
+        require(customerAddressToDetails[_customerAddress].customerActive == true, "This customer must be active");
+        require(_invoiceAmount > 0, "The invoice amount must be positive");
+
+        int newBalance;
+        newBalance = customerAddressToDetails[_customerAddress].customerBalance - _invoiceAmount;
+        //The opening balance must be 0 as the business needs to upload an invoice or receipt before changing the balance
+        customerAddressToDetails[_customerAddress].customerBalance = newBalance;
+        uint count;
+        count = customerAddressToInvoices[_customerAddress].push(_ipfsHash);
+
+
+        emit customerInvoiced(_customerAddress, customerAddressToInvoices[_customerAddress][count], customerAddressToDetails[_customerAddress].customerBalance);
+    }
+
+    function receiptCustomer(address _customerAddress,
+        int _receiptAmount, 
+        string _ipfsHash
+        ) public {
+        require(owner == msg.sender, "Only the business owner can receipt customers");
+        require(customerAddressToDetails[_customerAddress].customerActive == true, "This customer must be active");
+        require(_invoiceAmount > 0, "The receipt amount must be positive");
+
+        int newBalance;
+        newBalance = customerAddressToDetails[_customerAddress].customerBalance + _receiptAmount;
+        
+        customerAddressToDetails[_customerAddress].customerBalance = newBalance;
+        uint count;
+        count = customerAddressToInvoices[_customerAddress].push(_ipfsHash);
+
+
+        emit customerInvoiced(_customerAddress, customerAddressToInvoices[_customerAddress][count], customerAddressToDetails[_customerAddress].customerBalance);
     }
     
 }

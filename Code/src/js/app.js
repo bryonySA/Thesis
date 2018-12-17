@@ -1,29 +1,43 @@
+var Web3 = require('web3');
+//const ipfsAPI = require('ipfs-api');
+//const ipfs = ipfsAPI('ipfs.infura.io', '5001', {protocol: 'https'});
+var TruffleContract = require('truffle-contract');
+
 App = {
      web3Provider: null,
      contracts: {},
      account: 0x0,
      loading: false,
-     existingMasterContractAddress: 0x0,
-     //existingMasterContractAddress :'0xb55155b6c4e6ce7102c34c44df8af345e4d3830e',
-     existingLookupContractAddress: 0x0,
-     //existingLookupContractAddress :'0x1ee01e6bd06cbd1757b24285af4c8b46da06256a',
+     web3: null,
+     //existingMasterContractAddress: 0x0,
+     existingMasterContractAddress: '0x3a2b0d3922f12cf4b72193acb26ca79c082d642d',
+     //existingLookupContractAddress: 0x0,
+     existingLookupContractAddress: '0xd69af27a291489c6d79047c1c2ffaf1fe5b12776',
      masterAddress: 0x0,
      lookupAddress: 0x0,
+
+
      //NB: Make sure you've run npm install web3
      init: function () {
+          /*ipfs.id(function(err,res) {
+               if (err) throw err
+               console.log("Connected to IPFS node!", res.id, res.agentVersion, res.protocolVersion);
+               $("#ipfsStatus").text("Connected to IPFS node!", res.id, res.agentVersion, res.protocolVersion);
+          });*/
           return App.initWeb3();
      },
 
      initWeb3: function () {
           // initialize web3
-          if (typeof web3 != undefined) {
+          if (web3) {
                // reuse the provider of the web3 object injected by MetaMask
                App.web3Provider = web3.currentProvider;
+               this.web3 = web3;
           } else {
                // either create a new provider, here connecting to Ganache
-               App.web3Provider = new Web3.providers.HttpProvider('http://localhost:7545')
+               App.web3Provider = new Web3.providers.HttpProvider('http://127.0.0.1:7545')
                // instantiate a new web3 object
-               web3 = new Web3(App.web3Provider);
+               this.web3 = new Web3(App.web3Provider);
                // or handle the case that the user does not have MetaMask by showing her a message asking her to install Metamask
           }
           return App.initContract();
@@ -58,11 +72,11 @@ App = {
           // This is dependent on whether the existing address declared at the beginning of this function is 0x0 or not
           if (App.existingMasterContractAddress == 0x0) {
                // get the most recently deployed instance of the master contract
-               console.log('returning new');
+               console.log('returning new master');
                return App.contracts.Master.deployed();
           } else {
                // get the existing master contract from its address
-               console.log('returning existing');
+               console.log('returning existing master');
                return App.contracts.Master.at(App.existingMasterContractAddress);
           };
      },
@@ -72,17 +86,21 @@ App = {
           // This is dependent on whether the existing address declared at the beginning of this function is 0x0 or not
           if (App.existingLookupContractAddress == 0x0) {
                // get the most recently deployed instance of the master contract
-               console.log('returning new');
+               console.log('returning new lookup');
                return App.contracts.Lookup.deployed();
           } else {
                // get the existing master contract from its address
-               console.log('returning existing');
+               console.log('returning existing lookup');
                return App.contracts.Lookup.at(App.existingLookupContractAddress);
           };
      },
 
 
      displayAccountInfo: function () {
+          if (!this.web3) {
+               this.initWeb3();
+          }
+          var web3 = this.web3;
           // get current account information
           web3.eth.getCoinbase(function (err, account) {
                // if there is no error
@@ -103,6 +121,7 @@ App = {
           });
 
      },
+
 
      displayContractInfo: function () {
           App.returnMaster().then(async function (instance) {
@@ -395,6 +414,103 @@ App = {
           customerRow.append(customerTemplate.html());
 
      },
+
+
+     invoiceCustomer: function (ipfsHash) {
+          var _invoiceAmount = $('#invoiceAmount').val();
+          var _customerAddress = $('#invoiceCustomerAddress').val();
+          console.log('Invoicing customer: ', ipfsHash);
+
+
+
+          if (web3.isAddress(_customerAddress) != true) {
+               // we cannot add a business
+               console.log('Cannot invoice customer because address is invalid')
+               return false;
+          };
+
+          //get business contract address from their wallet = App.account stored on the master contract
+          App.returnMaster().then(function (masterInstance) {
+               console.log(App.account);
+               // Gets the name and contract address of the business linked to account (Contract, Name, Active)
+               return masterInstance.getBusinessDetails(App.account);
+          }).then(function (businessDetails) {
+               if (businessDetails[2] != true) {
+                    console.log('This is not an active business. Customer cannot be invoiced')
+               } else
+                    _businessContractAddress = businessDetails[0];
+               console.log(_businessContractAddress);
+               // get the instance of the business contract
+               return App.contracts.Business.at(_businessContractAddress);
+          }).then(function (businessInstance) {
+               console.log('Invoicing customer (' + _customerAddress + ') - Please check Metamask');
+               // call the addCustomer function, 
+               // passing the business name and the business wallet address
+               return businessInstance.invoiceCustomer(_customerAddress, _invoiceAmount, ipfsHash, {
+                    from: App.account,
+                    gas: 4612388
+               });
+          }).then(function (receipt) {
+               console.log(receipt.logs[0].args._customerAddress + ' added');
+               console.log("New Balance: " + receipt.logs[0].args._customerBalance);
+               console.log("IPFS Hash: " + receipt.logs[0].args._ipfsHash);
+               $('#invoiceAmount').val('');
+               $('#invoiceCustomerAddress').val('');
+               App.displayActiveCustomers();
+               // log the error if there is one
+          }).catch(function (error) {
+               console.log(error);
+          });
+     },
+
+     receiptCustomer: function (ipfsHash) {
+          var _invoiceAmount = $('#receiptAmount').val();
+          var _customerAddress = $('#receiptCustomerAddress').val();
+          console.log('Receipting customer: ', ipfsHash);
+
+
+
+          if (web3.isAddress(_customerAddress) != true) {
+               // we cannot add a business
+               console.log('Cannot receipt customer because address is invalid')
+               return false;
+          };
+
+          //get business contract address from their wallet = App.account stored on the master contract
+          App.returnMaster().then(function (masterInstance) {
+               console.log(App.account);
+               // Gets the name and contract address of the business linked to account (Contract, Name, Active)
+               return masterInstance.getBusinessDetails(App.account);
+          }).then(function (businessDetails) {
+               if (businessDetails[2] != true) {
+                    console.log('This is not an active business. Customer cannot be invoiced')
+               } else
+                    _businessContractAddress = businessDetails[0];
+               console.log(_businessContractAddress);
+               // get the instance of the business contract
+               return App.contracts.Business.at(_businessContractAddress);
+          }).then(function (businessInstance) {
+               console.log('Receipting customer (' + _customerAddress + ') - Please check Metamask');
+               // call the addCustomer function, 
+               // passing the business name and the business wallet address
+               return businessInstance.receiptCustomer(_customerAddress, _receiptAmount, ipfsHash, {
+                    from: App.account,
+                    gas: 4612388
+               });
+          }).then(function (receipt) {
+               console.log(receipt.logs[0].args._customerAddress + ' added');
+               console.log("New Balance: " + receipt.logs[0].args._customerBalance);
+               console.log("IPFS Hash: " + receipt.logs[0].args._ipfsHash);
+               $('#receiptAmount').val('');
+               $('#receiptCustomerAddress').val('');
+               App.displayActiveCustomers();
+               // log the error if there is one
+          }).catch(function (error) {
+               console.log(error);
+          });
+     },
+
+
 };
 
 $(function () {

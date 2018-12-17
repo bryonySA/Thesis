@@ -17,6 +17,8 @@ var customer_name1 = "Claire";
 var customer_address1;
 var lookupContractAddress;
 var emptyBusinessDetails;
+var ipfsHash = "QmXgZAUWd8yo4tvjBETqzUy3wLx5YRzuDwUQnBwRGrAmAo";
+var invoice_amount1 = 60;
 
 //Master contract test
 contract('Master', function(accounts) {
@@ -355,5 +357,45 @@ contract('Master', function(accounts) {
         });
     });
 
+    // Invoice customer works
+    it("should allow business owner to invoice a customer", function(){
+        return Business.at(business_contract_address1).then(function(instance){
+                return instance.invoiceCustomer(customer_address1, invoice_amount1, ipfsHash, {'from' : business_address1});
+        }).then(function(receipt) {
+            assert.equal(receipt.logs.length, 1, "an event should have been triggered");
+            assert.equal(receipt.logs[0].event, "customerInvoiced", "event should be customerAdded");
+            assert.equal(receipt.logs[0].args._customerAddress, customer_address1, "customer address in event must be " + customer_address1);
+            assert.equal(receipt.logs[0].args._customerBalance, -1*invoice_amount1, "custmer balance in event must be -" + invoice_amount1);
+            assert.equal(receipt.logs[0].args._ipfsHash, ipfsHash, "custmer IPFS hash in event must be " + ipfsHash);     
+        });
+    });
+
+    // Invoice customer works
+    it("should update the customer balance", function(){
+        return Business.at(business_contract_address1).then(function(instance){
+                return instance.getCustomerDetails(customer_address1, {'from' : business_address1});
+        }).then(function(details) {
+            assert.equal(details[1], -1*invoice_amount1, "new balance should be -" + invoice_amount1);
+            assert.equal(details[0], customer_name1, "customer name must be " + customer_name1);
+            assert.equal(details[2], true, "custmer must be active");    
+        });
+    });
+
+    it("should add return invoice list length", function(){
+        return Business.at(business_contract_address1).then(function(instance){
+            return instance.getCustomerInvoicesLength(customer_address1, {'from' : business_address1});
+        }).then(function(invoicesLength) {
+            assert.equal(invoicesLength, 1, "There should be 1 invoice loaded");
+        });
+    });
+
+    it("should return the IPFS hash from Address to invoice mapping", function(){
+        return Business.at(business_contract_address1).then(function(instance){
+
+                return instance.getCustomerInvoices(customer_address1, 1, {'from' : business_address1});
+        }).then(function(invoice) {
+            assert.equal(invoice, ipfsHash, "ipfs Hash must be " + ipfsHash);    
+        });
+    });
 
 })
