@@ -19,7 +19,9 @@ var lookupContractAddress;
 var emptyBusinessDetails;
 var ipfsHash = "QmXgZAUWd8yo4tvjBETqzUy3wLx5YRzuDwUQnBwRGrAmAo";
 var invoice_amount1 = 60;
-var due_date = "20190131"
+var due_date = "20190131";
+var date1 = 1545264000; //20 Dec 2018
+//var now = 1545141718
 
 //Master contract test
 contract('Master', function(accounts) {
@@ -398,5 +400,32 @@ contract('Master', function(accounts) {
             assert.equal(invoice[0], ipfsHash, "ipfs Hash must be " + ipfsHash);    
         });
     });
+
+    // can add to permission list
+    it("should allow customer account to add permission", function(){
+        return Lookup.deployed().then(function(instance) {
+        
+            return instance.addPermissionToCustomerList(accounts[7], date1, {from : customer_address1});         
+        }).then(function(receipt) {
+            assert.equal(receipt.logs.length, 1, "an event should have been triggered");
+            assert.equal(receipt.logs[0].event, "permissionAdded", "event should be permissionAdded");
+            assert.equal(receipt.logs[0].args._customerAddress, customer_address1, "customer address in event must be " + customer_address1);
+            assert.equal(receipt.logs[0].args._businessWalletAddress, accounts[7], "business wallet in event must be " + accounts[7]);
+            assert.equal(receipt.logs[0].args._viewableUntil, date1, "business wallet in event must be " + date1);
+    
+        });
+    });
+
+    it("should return valid permission check", function(){
+        return Lookup.deployed().then(function(instance) {
+        
+            return instance.checkPermission(customer_address1, accounts[7]);         
+        }).then(function(result) {
+            assert.equal(result, true, "result should be true");
+    
+        });
+    });
+    
+    // can access document
 
 })

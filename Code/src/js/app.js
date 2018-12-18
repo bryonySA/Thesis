@@ -9,10 +9,10 @@ App = {
      account: 0x0,
      loading: false,
      web3: null,
-     //existingMasterContractAddress: 0x0,
-     existingMasterContractAddress: '0x707a83ca3771e0c21ea674e77193e009cf76589f',
-     //existingLookupContractAddress: 0x0,
-     existingLookupContractAddress: '0x57359d38b190b646048b41778a97ba57c081150a',
+     existingMasterContractAddress: 0x0,
+     //existingMasterContractAddress: '0x59a8d14bc5e2f5e6a63a2ecc69a6c78e5f29e59c',
+     existingLookupContractAddress: 0x0,
+     //existingLookupContractAddress: '0x1b7eec3a3e6afa2911671b702cfd38e14d695813',
      masterAddress: 0x0,
      lookupAddress: 0x0,
 
@@ -232,7 +232,7 @@ App = {
                     App.loading = false;
 
                } else {
-                    console.log("Only Master Account", + owner + " can display businesses not " + App.Account);
+                    console.log("Only Master Account can display businesses not " + App.Account);
                }
           });
 
@@ -477,7 +477,7 @@ App = {
      },
 
      //This displays all customers linked to the business account if the master account is signed in
-     displayDocuments: function () {
+     displayDocuments: function (_customerAddress) {
           // avoid reentry
           if (App.loading) {
                return;
@@ -487,28 +487,23 @@ App = {
           // refresh account info
           App.displayAccountInfo();
 
-          var documentRow = $('#documentRow');
-          documentRow.empty();
+          
 
           //define placeholder for contract
           var businessContractAddress;
-          var businessInstance;
           var total = 0;
           var masterInstance;
           var lookupInstance;
-          var customerAddress;
+          var customerAddress = _customerAddress || App.account;
           var businessName;
-          var documentAmount;
-          var documentType;
-          var ipfsHash;
-          var dueDate;
-          var count;
 
+          var documentRow = $('#documentRow');
+          documentRow.empty();
+          var viewerDocumentRow = $('#viewerDocumentRow');
+          viewerDocumentRow.empty();
           // check if the account is the master wallet
 
           App.returnLookup().then(function (instance) {
-               console.log(App.account);
-               customerAddress = App.account;
                lookupInstance = instance;
                return App.returnMaster();
           }).then(function (instance) {
@@ -523,60 +518,24 @@ App = {
                          businessContractAddress = businessDetails[0];
                          businessName = businessDetails[1];
                          console.log(businessName);
-                         return App.generateDocumentsByBusiness(businessContractAddress, businessName).then(function(totalForBusiness){
+                         return App.generateDocumentsByBusiness(businessContractAddress, businessName, customerAddress).then(function(totalForBusiness){
                               if (totalForBusiness< 0) {
                               total = total + totalForBusiness;
                               }
                          });
-                         /*return App.contracts.Business.at(businessContractAddress);
-                    }).then(function (instance) {
-                         businessInstance = instance;
-                         console.log(businessName);
-                         return businessInstance.getCustomerDetails(customerAddress);
-                    }).then(function (customerDetails) {
-                         //Add the balance if the customer owes money
-                         if (customerDetails[1] < 0) {
-                              total = total + customerDetails[1];
-                         }
-                         return businessInstance.getCustomerDocumentsLength(customerAddress);
-                    }).then(function (documentCount) {
-                         console.log("number of documents for " + businessName +" "  + documentCount)
-                         for (let i = 0; i < documentCount; i++) {
-                              console.log("generating " + i)
-                              businessInstance.getCustomerDocument(customerAddress, i).then(async function (document) {
-                                   let ipfsHash = await document[0];
-                                   let documentAmount = await document[1];
-                                   let dueDate =  await document[2];
-                                   if (documentAmount < 0) {
-                                        documentType = "Invoice";
-                                   } else {
-                                        documentType = "Receipt";
-                                   }
-                              //}).then(function () {
-                                   console.log("displaying "+ businessContractAddress + i);
-                                   App.displayDocument(
-                                        dueDate,
-                                        businessName,
-                                        documentAmount,
-                                        documentType,
-                                        ipfsHash
-                                   );
-                              });
-                         };
-                    });*/
-          
                });
           });
           console.log(total);
+          $('#customerScore').val(total);
      });
      },
 
-     generateDocumentsByBusiness: function(_businessContractAddress, _businessName){
+     generateDocumentsByBusiness: function(_businessContractAddress, _businessName, _customerAddress){
           var businessInstance;
-          var customerAddress = App.account;
+          var customerAddress = _customerAddress || App.account;
           var totalForBusiness = 0;
           var dueDate;
-          //var ipfsHash;
+          var ipfsHash;
           var documentAmount;
           var documentType;
 
@@ -595,8 +554,8 @@ App = {
           console.log("number of documents for " + _businessName +" "  + documentCount)
           for (let i = 0; i < documentCount; i++) {
                console.log("generating " + i)
-               businessInstance.getCustomerDocument(customerAddress, i).then(async function (document) {
-                    let ipfsHash = await document[0];
+               businessInstance.getCustomerDocument(customerAddress, i).then(function (document) {
+                    ipfsHash = document[0];
                     documentAmount =  document[1];
                     dueDate =   document[2];
                     if (documentAmount < 0) {
@@ -606,13 +565,23 @@ App = {
                     }
                //}).then(function () {
                     console.log("displaying "+ _businessContractAddress + i);
-                    App.displayDocument(
-                         dueDate,
-                         _businessName,
-                         documentAmount,
-                         documentType,
-                         ipfsHash
-                    );
+                    if (customerAddress == App.account){
+                         App.displayDocumentToCustomer(
+                              dueDate,
+                              _businessName,
+                              documentAmount,
+                              documentType,
+                              ipfsHash
+                         );
+                    }else {
+                         App.displayDocumentToViewer(
+                              dueDate,
+                              _businessName,
+                              documentAmount,
+                              documentType,
+                              ipfsHash
+                         );
+                    }
                });
           };
           return totalForBusiness;
@@ -620,9 +589,10 @@ App = {
      },
 
 
-     displayDocument: function (date, businessName, documentAmount, documentType, ipfsHash) {
+     displayDocumentToCustomer: function (date, businessName, documentAmount, documentType, ipfsHash) {
           var documentRow = $('#documentRow');
           var documentTemplate = $('#documentTemplate');
+          console.log("displaying to customer portal");
           documentTemplate.find('.document-date').text(date);
           documentTemplate.find('.document-business').text(businessName);
           documentTemplate.find('.document-amount').text(documentAmount);
@@ -633,53 +603,52 @@ App = {
           documentRow.append(documentTemplate.html());
      },
 
-     /*receiptCustomer: function (ipfsHash) {
-          var _invoiceAmount = $('#receiptAmount').val();
-          var _customerAddress = $('#receiptCustomerAddress').val();
-          console.log('Receipting customer: ', ipfsHash);
+     displayDocumentToViewer: function (date, businessName, documentAmount, documentType, ipfsHash) {
+          var viewerDocumentRow = $('#viewerDocumentRow');
+          var viewerDocumentTemplate = $('#viewerDocumentTemplate');
+          console.log("displaying to viewer portal");
+          viewerDocumentTemplate.find('.viewer-document-date').text(date);
+          viewerDocumentTemplate.find('.viewer-document-business').text(businessName);
+          viewerDocumentTemplate.find('.viewer-document-amount').text(documentAmount);
+          viewerDocumentTemplate.find('.viewer-document-type').text(documentType);
+          viewerDocumentTemplate.find('.viewer-document-ipfs').text(ipfsHash);
 
+          //add this document to the placeholder
+          viewerDocumentRow.append(viewerDocumentTemplate.html());
+     },
 
+     addPermission: function(){
+          console.log('Add Permission button clicked');
+          // get information from the modal
+          var _permissionAddress = $('#permissionAddress').val();
+          var _permissionValidity = $('#permissionValidity').val();
 
-          if (web3.isAddress(_customerAddress) != true) {
-               // we cannot add a business
-               console.log('Cannot receipt customer because address is invalid')
-               return false;
-          };
-
-          //get business contract address from their wallet = App.account stored on the master contract
-          App.returnMaster().then(function (masterInstance) {
-               console.log(App.account);
-               // Gets the name and contract address of the business linked to account (Contract, Name, Active)
-               return masterInstance.getBusinessDetails(App.account);
-          }).then(function (businessDetails) {
-               if (businessDetails[2] != true) {
-                    console.log('This is not an active business. Customer cannot be invoiced')
-               } else
-                    _businessContractAddress = businessDetails[0];
-               console.log(_businessContractAddress);
-               // get the instance of the business contract
-               return App.contracts.Business.at(_businessContractAddress);
-          }).then(function (businessInstance) {
-               console.log('Receipting customer (' + _customerAddress + ') - Please check Metamask');
-               // call the addCustomer function, 
-               // passing the business name and the business wallet address
-               return businessInstance.receiptCustomer(_customerAddress, _receiptAmount, ipfsHash, {
+          var _permissionValidityConverted = new Date(_permissionValidity).getTime() / 1000;
+          console.log(_permissionValidityConverted);
+          console.log(Date.now());
+          return App.returnLookup().then(function(lookupInstance){
+               lookupInstance.addPermissionToCustomerList(_permissionAddress, _permissionValidityConverted, {
                     from: App.account,
-                    gas: 4612388
+                    gas: 5000000
                });
-          }).then(function (receipt) {
-               console.log(receipt.logs[0].args._customerAddress + ' added');
-               console.log("New Balance: " + receipt.logs[0].args._customerBalance);
-               console.log("IPFS Hash: " + receipt.logs[0].args._ipfsHash);
-               $('#receiptAmount').val('');
-               $('#receiptCustomerAddress').val('');
-               App.displayActiveCustomers();
-               // log the error if there is one
-          }).catch(function (error) {
-               console.log(error);
+               console.log('Permission Added');
           });
-     }, */
+     },
 
+     viewDocumentsAsExternal: function(){
+          var customerAddress = $('#viewerRequestedAddress').val();
+          return App.returnLookup().then(function(lookupInstance){
+               return lookupInstance.checkPermission(customerAddress, App.account);
+          }).then(function(result){
+               console.log(result);
+               if(result == true){
+                    App.displayDocuments(customerAddress);
+                    console.log("Documents Displayed")
+               } else {
+                    console.log("You do not have permission to view these documents")
+               };
+          });
+     },
 
 };
 
@@ -701,5 +670,5 @@ $(function () {
                // update the current account
                _account = App.account;
           }
-     }, 100);
+     }, 10);
 });

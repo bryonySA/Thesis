@@ -35,10 +35,10 @@
             <a class="nav-link" href="businessPortal.html">Business Portal</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link active" href="customerPortal.html">Customer Portal</a>
+            <a class="nav-link" href="customerPortal.html">Customer Portal</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="viewerPortal.html">Viewer Portal</a>
+            <a class="nav-link active" href="viewerPortal.html">Viewer Portal</a>
         </li>
     </ul>
 
@@ -58,39 +58,35 @@
 
                 </div>
             </div>
+
             <div class="row">
-                <div class="col-lg-4 font-weight-bold"><strong>Your Current Score:</strong></div>
-                <div class="col-lg-8" id="customerScore"></div>
-            </div>
-            <div class="row">
-                <button class="btn btn-info btn-lg btn-create" data-toggle="modal" onclick="App.displayDocuments(); return false;">Display
+
+                <button class="btn btn-info btn-lg btn-create" data-toggle="modal" data-target=#viewDocuments>View
                     Documents</button>
-                <button class="btn btn-info btn-lg btn-create" data-toggle="modal" data-target=#addPermission>Give View
-                    Rights</button>
             </div>
 
-            <div id="documentRow" class="row">
-                <!-- Invoices LOAD HERE -->
+            <div id="viewerDocumentRow" class="row">
+                <!-- DOCUMENTS LOAD HERE -->
             </div>
         </div>
-        <div id="documentTemplate" style="display: none;">
+        <div id="viewerDocumentTemplate" style="display: none;">
             <div class="row-lg-12">
                 <div class="panel panel-default panel-article">
                     <div class="panel-heading">
-                        <h3 class="document-date"></h3>
+                        <h3 class="viewer-document-date"></h3>
                     </div>
                     <div class="panel-body">
                         <strong>Business Name</strong>:
-                        <span class="document-business"></span>
+                        <span class="viewer-document-business"></span>
                         <br />
                         <strong>Document Amount</strong>:
-                        <span class="document-amount"></span>
+                        <span class="viewer-document-amount"></span>
                         <br />
                         <strong>Document Type</strong>:
-                        <span class="document-type"></span>
+                        <span class="viewer-document-type"></span>
                         <br />
                         <strong>IPFS Hash</strong>:
-                        <span class="document-ipfs"></span>
+                        <span class="viewer-document-ipfs"></span>
                     </div>
                     <!--  <div class="panel-footer">
                         <button type="button" class="btn btn-primary btn-success btn-addCustomer" onclick="App.addCustomer(this); return false;">Add Customer</button>
@@ -101,15 +97,15 @@
 
     </div>
 
-    <!-- Modal form to add permission  -->
-    <div class="modal fade" id="addPermission" role="dialog">
+    <!-- Modal form to view documents  -->
+    <div class="modal fade" id="viewDocuments" role="dialog">
         <div class="modal-dialog">
 
             <!-- Modal content-->
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Give an account view rights</h4>
+                    <h4 class="modal-title">View A Cusotmers Documents</h4>
                 </div>
                 <div class="modal-body">
 
@@ -117,17 +113,15 @@
                         <div class="col-lg-12">
                             <form>
                                 <div class="form-group">
-                                    <label for="permission_address">Viewers address</label>
-                                    <input type="text" class="form-control" id="permissionAddress" placeholder="Enter the wallet address of the viewer.">
-                                    <label for="permission_validity">End Date of View Permission</label>
-                                    <input type="date" class="form-control" id="permissionValidity" placeholder="Enter the date that the viewer has permission until.">
+                                    <label for="viewer_requested_address">Customers address</label>
+                                    <input type="text" class="form-control" id="viewerRequestedAddress" placeholder="Enter the wallet address of the customer you'd like to view.">
                                 </div>
                             </form>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary btn-success" data-dismiss="modal" onclick="App.addPermission(); return false;">Load
+                    <button type="button" class="btn btn-primary btn-success" data-dismiss="modal" onclick="App.viewDocumentsAsExternal(); return false;">Load
                         Permission</button>
                     <button type="button" class="btn" data-dismiss="modal">Close</button>
                 </div>
