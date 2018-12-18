@@ -10,9 +10,9 @@ App = {
      loading: false,
      web3: null,
      //existingMasterContractAddress: 0x0,
-     existingMasterContractAddress: '0x3a2b0d3922f12cf4b72193acb26ca79c082d642d',
+     existingMasterContractAddress: '0x707a83ca3771e0c21ea674e77193e009cf76589f',
      //existingLookupContractAddress: 0x0,
-     existingLookupContractAddress: '0xd69af27a291489c6d79047c1c2ffaf1fe5b12776',
+     existingLookupContractAddress: '0x57359d38b190b646048b41778a97ba57c081150a',
      masterAddress: 0x0,
      lookupAddress: 0x0,
 
@@ -416,16 +416,27 @@ App = {
      },
 
 
-     invoiceCustomer: function (ipfsHash) {
-          var _invoiceAmount = $('#invoiceAmount').val();
-          var _customerAddress = $('#invoiceCustomerAddress').val();
-          console.log('Invoicing customer: ', ipfsHash);
+     processDocument: function (ipfsHash, docType) {
 
+
+          if (docType == "invoice") {
+               var _amount = -1 * $('#invoiceAmount').val();
+               var _customerAddress = $('#invoiceCustomerAddress').val();
+               var _dueDate = $('#invoiceDueDate').val();
+               console.log('Invoicing customer: ', ipfsHash);
+
+
+          } else {
+               var _amount = $('#receiptAmount').val();
+               var _customerAddress = $('#receiptCustomerAddress').val();
+               var _dueDate = $('#receiptDueDate').val();
+               console.log('Receipting customer: ', ipfsHash);
+          }
 
 
           if (web3.isAddress(_customerAddress) != true) {
                // we cannot add a business
-               console.log('Cannot invoice customer because address is invalid')
+               console.log('Cannot process document because address is invalid');
                return false;
           };
 
@@ -436,17 +447,17 @@ App = {
                return masterInstance.getBusinessDetails(App.account);
           }).then(function (businessDetails) {
                if (businessDetails[2] != true) {
-                    console.log('This is not an active business. Customer cannot be invoiced')
+                    console.log('This is not an active business. Customer cannot be invoiced or receipted')
                } else
                     _businessContractAddress = businessDetails[0];
                console.log(_businessContractAddress);
                // get the instance of the business contract
                return App.contracts.Business.at(_businessContractAddress);
           }).then(function (businessInstance) {
-               console.log('Invoicing customer (' + _customerAddress + ') - Please check Metamask');
+               console.log('Processing document (' + _customerAddress + ') - Please check Metamask');
                // call the addCustomer function, 
                // passing the business name and the business wallet address
-               return businessInstance.invoiceCustomer(_customerAddress, _invoiceAmount, ipfsHash, {
+               return businessInstance.processDocument(_customerAddress, _amount, ipfsHash, _dueDate, {
                     from: App.account,
                     gas: 4612388
                });
@@ -456,6 +467,8 @@ App = {
                console.log("IPFS Hash: " + receipt.logs[0].args._ipfsHash);
                $('#invoiceAmount').val('');
                $('#invoiceCustomerAddress').val('');
+               $('#receiptAmount').val('');
+               $('#receiptCustomerAddress').val('');
                App.displayActiveCustomers();
                // log the error if there is one
           }).catch(function (error) {
@@ -463,7 +476,104 @@ App = {
           });
      },
 
-     receiptCustomer: function (ipfsHash) {
+     //This displays all customers linked to the business account if the master account is signed in
+     displayDocuments: function () {
+          // avoid reentry
+          if (App.loading) {
+               return;
+          };
+          App.loading = true;
+
+          // refresh account info
+          App.displayAccountInfo();
+
+          var documentRow = $('#documentRow');
+          documentRow.empty();
+
+          //define placeholder for contract
+          var businessContractAddress;
+          var businessInstance;
+          var total = 0;
+          var masterInstance;
+          var lookupInstance;
+          var customerAddress;
+          var businessName;
+          var documentAmount;
+          var documentType;
+          var ipfsHash;
+          var dueDate;
+          // check if the account is the master wallet
+
+          App.returnLookup().then(function (instance) {
+               console.log(App.account);
+               customerAddress = App.account;
+               lookupInstance = instance;
+               return App.returnMaster();
+          }).then(function (instance) {
+               masterInstance = instance;
+               return lookupInstance.getCustomerBusinessList(customerAddress);
+          }).then(function (businessList) {
+               console.log("Business List length " + businessList.length);
+               businessList.forEach(businessWalletAddress => {
+                    console.log(businessWalletAddress);
+                    masterInstance.getBusinessDetails(businessWalletAddress).then(function (businessDetails) {
+                         businessContractAddress = businessDetails[0];
+                         businessName = businessDetails[1];
+                         return App.contracts.Business.at(businessContractAddress);
+                    }).then(function (instance) {
+                         businessInstance = instance;
+                         return businessInstance.getCustomerDetails(customerAddress);
+                    }).then(function (customerDetails) {
+                         //Add the balance if the customer owes money
+                         if (customerDetails[1] < 0) {
+                              total = total + customerDetails[1];
+                         }
+                         return businessInstance.getCustomerDocumentsLength(customerAddress);
+                    }).then(function (documentCount) {
+                         console.log("number of documents " + documentCount)
+                         for (let i = 0; i < documentCount; i++) {
+                              console.log("generating " + i)
+                              businessInstance.getCustomerDocument(customerAddress, i).then(async function (document) {
+                                   let ipfsHash = await document[0];
+                                   let documentAmount = await document[1];
+                                   let dueDate =  await document[2];
+                                   if (documentAmount < 0) {
+                                        documentType = "Invoice";
+                                   } else {
+                                        documentType = "Receipt";
+                                   }
+                              //}).then(function () {
+                                   console.log("displaying " + i);
+                                   App.displayDocument(
+                                        dueDate,
+                                        businessName,
+                                        documentAmount,
+                                        documentType,
+                                        ipfsHash
+                                   );
+                              });
+                         };
+                    });
+               });
+          });
+     },
+
+
+
+     displayDocument: function (date, businessName, documentAmount, documentType, ipfsHash) {
+          var documentRow = $('#documentRow');
+          var documentTemplate = $('#documentTemplate');
+          documentTemplate.find('.document-date').text(date);
+          documentTemplate.find('.document-business').text(businessName);
+          documentTemplate.find('.document-amount').text(documentAmount);
+          documentTemplate.find('.document-type').text(documentType);
+          documentTemplate.find('.document-ipfs').text(ipfsHash);
+
+          //add this document to the placeholder
+          documentRow.append(documentTemplate.html());
+     },
+
+     /*receiptCustomer: function (ipfsHash) {
           var _invoiceAmount = $('#receiptAmount').val();
           var _customerAddress = $('#receiptCustomerAddress').val();
           console.log('Receipting customer: ', ipfsHash);
@@ -508,7 +618,7 @@ App = {
           }).catch(function (error) {
                console.log(error);
           });
-     },
+     }, */
 
 
 };

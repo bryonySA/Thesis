@@ -40,7 +40,7 @@
                 }
                 let url = `https://ipfs.io/ipfs/${result[0].hash}`
                 console.log(`Url --> ${url}`)
-                App.invoiceCustomer(result[0].hash);
+                App.processDocument(result[0].hash, "invoice");
             })
         }
         const invoice = document.getElementById("invoice");
@@ -60,11 +60,12 @@
                 }
                 let url = `https://ipfs.io/ipfs/${result[0].hash}`
                 console.log(`Url --> ${url}`)
-                App.receiptCustomer(result[0].hash);
+                //muliplier = 1 means receipt
+                App.processDocument(result[0].hash, "receipt");
             })
         }
         const receipt = document.getElementById("receipt");
-        reader.readAsArrayBuffer(invreceiptoice.files[0]); // Read Provided File
+        reader.readAsArrayBuffer(receipt.files[0]); // Read Provided File
     }
 </script> 
 
@@ -172,6 +173,8 @@
                                     <input type="text" class="form-control" id="invoiceCustomerAddress" placeholder="Enter the wallet address of the customer to invoice.">
                                     <label for="invoice_amount">Invoice Amount</label>
                                     <input type="text" class="form-control" id="invoiceAmount" placeholder="Enter the invoice amount.">
+                                    <label for="invoice_dueDate">Due Date</label>
+                                    <input type="text" class="form-control" id="invoiceDueDate" placeholder="Enter the invoice due date.">
                                     <label for="invoice_upload">Please upload invoice</label>
                                     <input type="file" name="invoice" id="invoice">
                                 </div>
@@ -189,7 +192,7 @@
     </div>
     
     <!-- Modal form to invoice a customer  -->
-    <div class="modal fade" id="invoiceCustomer" role="dialog">
+    <div class="modal fade" id="receiptCustomer" role="dialog">
         <div class="modal-dialog">
 
             <!-- Modal content-->
@@ -208,6 +211,8 @@
                                     <input type="text" class="form-control" id="receiptCustomerAddress" placeholder="Enter the wallet address of the customer to receipt.">
                                     <label for="receipt_amount">Receipt Amount</label>
                                     <input type="text" class="form-control" id="receiptAmount" placeholder="Enter the receipt amount.">
+                                    <label for="receipt_dueDate">Payment Date</label>
+                                    <input type="text" class="form-control" id="receiptDueDate" placeholder="Enter the payment date.">
                                     <label for="receipt_upload">Please upload receipt</label>
                                     <input type="file" name="receipt" id="receipt">
                                 </div>
@@ -246,6 +251,8 @@
                 <button class="btn btn-info btn-lg btn-create" data-toggle="modal" onclick="App.displayActiveCustomers(); return false;">Display
                     all customers</button>
                 <button class="btn btn-info btn-lg btn-create" data-toggle="modal" data-target="#invoiceCustomer">Invoice
+                    customer</button>
+                <button class="btn btn-info btn-lg btn-create" data-toggle="modal" data-target="#receiptCustomer">Receipt
                     customer</button>
 
             </div>

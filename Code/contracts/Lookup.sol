@@ -10,7 +10,7 @@ contract Lookup {
         return customerAddressToBusinessList[_customerAddress];
     }
 
-    function addBusinessToCustomerList(address _customerAddress, address _businessAddress) public {
-        customerAddressToBusinessList[_customerAddress].push(_businessAddress);
+    function addBusinessToCustomerList(address _customerAddress, address _businessWalletAddress) public {
+        customerAddressToBusinessList[_customerAddress].push(_businessWalletAddress);
     }
 }

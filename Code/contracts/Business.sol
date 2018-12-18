@@ -37,7 +37,7 @@ contract Business {
 
     event ownershipSet(address indexed _businessWalletAddress, string _businessName, address _contractAddress);
     event customerAdded(string _customerName, address _customerAddress, address _businessWalletAddress);
-    event customerInvoiced(address _customerAddress, string _ipfsHash, int _customerBalance);
+    event documentProcessed(address _customerAddress, int _customerBalance);
 
         //////////////////////////////
         /// BUSINESS SECTION ////////
@@ -61,7 +61,7 @@ contract Business {
         bool customerActive;
     }
 
-    struct documentDetails{
+    struct DocumentDetails{
         string ipfsHash;
         int amount;
         string dueDate;
@@ -69,9 +69,9 @@ contract Business {
     }
 
     mapping(address => CustomerDetails) customerAddressToDetails;
-    //mapping(address => string[]) customerAddressToInvoices;
+    mapping(address => DocumentDetails[]) customerAddressToDocuments;
 
-    mapping(address => string[]) customerAddressToInvoices;
+    //mapping(address => string[]) customerAddressToInvoices;
 
     function addCustomer(address _customerAddress,
         string _customerName, 
@@ -111,52 +111,52 @@ contract Business {
             customerAddressToDetails[_customerAddress].customerActive);
     }
 
-    function getCustomerInvoicesLength(address _customerAddress) public view returns (uint){
+    function getCustomerDocumentsLength(address _customerAddress) public view returns (uint){
 
-        return customerAddressToInvoices[_customerAddress].length;
+        return customerAddressToDocuments[_customerAddress].length;
     }
 
-    function getCustomerInvoices(address _customerAddress, uint index) public view returns (string){
+    function getCustomerDocument(address _customerAddress, uint index) public view returns (
+        string ipfsHash,
+        int amount,
+        string dueDate){
+            DocumentDetails memory thisDocument = customerAddressToDocuments[_customerAddress][index];
 
-        return customerAddressToInvoices[_customerAddress][index-1];
+        return (thisDocument.ipfsHash,
+            thisDocument.amount,
+           thisDocument.dueDate);
     }
 
-    function invoiceCustomer(address _customerAddress,
-        int _invoiceAmount, 
-        string _ipfsHash
+    function processDocument(address _customerAddress,
+        int _amount, 
+        string _ipfsHash,
+        string _dueDate
         ) public {
-        require(owner == msg.sender, "Only the business owner can invoice customers");
+        //NB!!! Negative number = INVOICE
+        require(owner == msg.sender, "Only the business owner can process documents");
         require(customerAddressToDetails[_customerAddress].customerActive == true, "This customer must be active");
-        require(_invoiceAmount > 0, "The invoice amount must be positive");
-
-        int newBalance;
-        newBalance = customerAddressToDetails[_customerAddress].customerBalance - _invoiceAmount;
-        //The opening balance must be 0 as the business needs to upload an invoice or receipt before changing the balance
-        customerAddressToDetails[_customerAddress].customerBalance = newBalance;
-        uint count;
-        count = customerAddressToInvoices[_customerAddress].push(_ipfsHash);
-
-
-        emit customerInvoiced(_customerAddress, customerAddressToInvoices[_customerAddress][count], customerAddressToDetails[_customerAddress].customerBalance);
-    }
-
-    function receiptCustomer(address _customerAddress,
-        int _receiptAmount, 
-        string _ipfsHash
-        ) public {
-        require(owner == msg.sender, "Only the business owner can receipt customers");
-        require(customerAddressToDetails[_customerAddress].customerActive == true, "This customer must be active");
-        require(_invoiceAmount > 0, "The receipt amount must be positive");
-
-        int newBalance;
-        newBalance = customerAddressToDetails[_customerAddress].customerBalance + _receiptAmount;
         
-        customerAddressToDetails[_customerAddress].customerBalance = newBalance;
-        uint count;
-        count = customerAddressToInvoices[_customerAddress].push(_ipfsHash);
+        /*string documentType;
+        if (_amount < 0){
+            documentType = "invoice";
+        } else
+            documentType = "receipt";
+        }*/
 
+        //int newBalance;
+        //newBalance = customerAddressToDetails[_customerAddress][1] + _amount;
+        //The opening balance must be 0 as the business needs to upload an invoice or receipt before changing the balance
+        CustomerDetails storage thisCustomer = customerAddressToDetails[_customerAddress];
+        thisCustomer.customerBalance = thisCustomer.customerBalance + _amount;
+        
 
-        emit customerInvoiced(_customerAddress, customerAddressToInvoices[_customerAddress][count], customerAddressToDetails[_customerAddress].customerBalance);
+        //DocumentDetails memory 
+        DocumentDetails memory document = DocumentDetails(_ipfsHash, _amount, _dueDate);
+        customerAddressToDocuments[_customerAddress].push(document);
+    
+
+        emit documentProcessed(_customerAddress, thisCustomer.customerBalance);
     }
+
     
 }
