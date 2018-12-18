@@ -502,6 +502,8 @@ App = {
           var documentType;
           var ipfsHash;
           var dueDate;
+          var count;
+
           // check if the account is the master wallet
 
           App.returnLookup().then(function (instance) {
@@ -511,6 +513,7 @@ App = {
                return App.returnMaster();
           }).then(function (instance) {
                masterInstance = instance;
+               count = 0;
                return lookupInstance.getCustomerBusinessList(customerAddress);
           }).then(function (businessList) {
                console.log("Business List length " + businessList.length);
@@ -519,9 +522,16 @@ App = {
                     masterInstance.getBusinessDetails(businessWalletAddress).then(function (businessDetails) {
                          businessContractAddress = businessDetails[0];
                          businessName = businessDetails[1];
-                         return App.contracts.Business.at(businessContractAddress);
+                         console.log(businessName);
+                         return App.generateDocumentsByBusiness(businessContractAddress, businessName).then(function(totalForBusiness){
+                              if (totalForBusiness< 0) {
+                              total = total + totalForBusiness;
+                              }
+                         });
+                         /*return App.contracts.Business.at(businessContractAddress);
                     }).then(function (instance) {
                          businessInstance = instance;
+                         console.log(businessName);
                          return businessInstance.getCustomerDetails(customerAddress);
                     }).then(function (customerDetails) {
                          //Add the balance if the customer owes money
@@ -530,7 +540,7 @@ App = {
                          }
                          return businessInstance.getCustomerDocumentsLength(customerAddress);
                     }).then(function (documentCount) {
-                         console.log("number of documents " + documentCount)
+                         console.log("number of documents for " + businessName +" "  + documentCount)
                          for (let i = 0; i < documentCount; i++) {
                               console.log("generating " + i)
                               businessInstance.getCustomerDocument(customerAddress, i).then(async function (document) {
@@ -543,7 +553,7 @@ App = {
                                         documentType = "Receipt";
                                    }
                               //}).then(function () {
-                                   console.log("displaying " + i);
+                                   console.log("displaying "+ businessContractAddress + i);
                                    App.displayDocument(
                                         dueDate,
                                         businessName,
@@ -553,11 +563,61 @@ App = {
                                    );
                               });
                          };
-                    });
+                    });*/
+          
                });
           });
+          console.log(total);
+     });
      },
 
+     generateDocumentsByBusiness: function(_businessContractAddress, _businessName){
+          var businessInstance;
+          var customerAddress = App.account;
+          var totalForBusiness = 0;
+          var dueDate;
+          //var ipfsHash;
+          var documentAmount;
+          var documentType;
+
+
+          return App.contracts.Business.at(_businessContractAddress).then(function (instance) {
+          businessInstance = instance;
+          console.log(_businessName);
+          return businessInstance.getCustomerDetails(customerAddress);
+     }).then(function (customerDetails) {
+          //Add the balance if the customer owes money
+          if (customerDetails[1] < 0) {
+               totalForBusiness = totalForBusiness + customerDetails[1];
+          }
+          return businessInstance.getCustomerDocumentsLength(customerAddress);
+     }).then(function (documentCount) {
+          console.log("number of documents for " + _businessName +" "  + documentCount)
+          for (let i = 0; i < documentCount; i++) {
+               console.log("generating " + i)
+               businessInstance.getCustomerDocument(customerAddress, i).then(async function (document) {
+                    let ipfsHash = await document[0];
+                    documentAmount =  document[1];
+                    dueDate =   document[2];
+                    if (documentAmount < 0) {
+                         documentType = "Invoice";
+                    } else {
+                         documentType = "Receipt";
+                    }
+               //}).then(function () {
+                    console.log("displaying "+ _businessContractAddress + i);
+                    App.displayDocument(
+                         dueDate,
+                         _businessName,
+                         documentAmount,
+                         documentType,
+                         ipfsHash
+                    );
+               });
+          };
+          return totalForBusiness;
+     });
+     },
 
 
      displayDocument: function (date, businessName, documentAmount, documentType, ipfsHash) {
