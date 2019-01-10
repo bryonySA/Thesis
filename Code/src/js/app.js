@@ -1,6 +1,4 @@
 var Web3 = require('web3');
-//const ipfsAPI = require('ipfs-api');
-//const ipfs = ipfsAPI('ipfs.infura.io', '5001', {protocol: 'https'});
 var TruffleContract = require('truffle-contract');
 
 App = {
@@ -10,20 +8,15 @@ App = {
      loading: false,
      web3: null,
      existingMasterContractAddress: 0x0,
-     //existingMasterContractAddress: '0x59a8d14bc5e2f5e6a63a2ecc69a6c78e5f29e59c',
+     //existingMasterContractAddress: '0xe644175fff397b9b7df076f768fc24c5acd5c3b5',
      existingLookupContractAddress: 0x0,
-     //existingLookupContractAddress: '0x1b7eec3a3e6afa2911671b702cfd38e14d695813',
+     //existingLookupContractAddress: '0xa852b56903db565cc2075368eb4efac97bb6f93b',
      masterAddress: 0x0,
      lookupAddress: 0x0,
 
 
      //NB: Make sure you've run npm install web3
      init: function () {
-          /*ipfs.id(function(err,res) {
-               if (err) throw err
-               console.log("Connected to IPFS node!", res.id, res.agentVersion, res.protocolVersion);
-               $("#ipfsStatus").text("Connected to IPFS node!", res.id, res.agentVersion, res.protocolVersion);
-          });*/
           return App.initWeb3();
      },
 
@@ -72,11 +65,9 @@ App = {
           // This is dependent on whether the existing address declared at the beginning of this function is 0x0 or not
           if (App.existingMasterContractAddress == 0x0) {
                // get the most recently deployed instance of the master contract
-               console.log('returning new master');
                return App.contracts.Master.deployed();
           } else {
                // get the existing master contract from its address
-               console.log('returning existing master');
                return App.contracts.Master.at(App.existingMasterContractAddress);
           };
      },
@@ -86,11 +77,9 @@ App = {
           // This is dependent on whether the existing address declared at the beginning of this function is 0x0 or not
           if (App.existingLookupContractAddress == 0x0) {
                // get the most recently deployed instance of the master contract
-               console.log('returning new lookup');
                return App.contracts.Lookup.deployed();
           } else {
                // get the existing master contract from its address
-               console.log('returning existing lookup');
                return App.contracts.Lookup.at(App.existingLookupContractAddress);
           };
      },
@@ -133,7 +122,6 @@ App = {
                $("#lookupContract").text(lookupAddress);
           });
      },
-
 
 
      addBusiness: function () {
@@ -349,7 +337,6 @@ App = {
                console.log('customer balance', customerDetails[1]);
                console.log('customer active', customerDetails[2]);
           });
-
      },
 
      //This displays all customers linked to the business account if the master account is signed in
@@ -402,7 +389,6 @@ App = {
      },
 
 
-
      displayCustomer: function (name, address, balance) {
           var customerRow = $('#customerRow');
           var customerTemplate = $('#customerTemplate');
@@ -417,22 +403,17 @@ App = {
 
 
      processDocument: function (ipfsHash, docType) {
-
-
           if (docType == "invoice") {
                var _amount = -1 * $('#invoiceAmount').val();
                var _customerAddress = $('#invoiceCustomerAddress').val();
                var _dueDate = $('#invoiceDueDate').val();
                console.log('Invoicing customer: ', ipfsHash);
-
-
           } else {
                var _amount = $('#receiptAmount').val();
                var _customerAddress = $('#receiptCustomerAddress').val();
                var _dueDate = $('#receiptDueDate').val();
                console.log('Receipting customer: ', ipfsHash);
           }
-
 
           if (web3.isAddress(_customerAddress) != true) {
                // we cannot add a business
@@ -486,8 +467,9 @@ App = {
 
           // refresh account info
           App.displayAccountInfo();
-
-          
+          $("#customerScore").text("");
+          $("#viewerCustomerId").text("Customer Score for " + _customerAddress);
+          $("#viewerCustomerScore").text("");
 
           //define placeholder for contract
           var businessContractAddress;
@@ -496,12 +478,10 @@ App = {
           var lookupInstance;
           var customerAddress = _customerAddress || App.account;
           var businessName;
-
           var documentRow = $('#documentRow');
           documentRow.empty();
           var viewerDocumentRow = $('#viewerDocumentRow');
           viewerDocumentRow.empty();
-          // check if the account is the master wallet
 
           App.returnLookup().then(function (instance) {
                lookupInstance = instance;
@@ -520,13 +500,15 @@ App = {
                          console.log(businessName);
                          return App.generateDocumentsByBusiness(businessContractAddress, businessName, customerAddress).then(function(totalForBusiness){
                               if (totalForBusiness< 0) {
+                              console.log("Total for "+businessName+": "+totalForBusiness)
                               total = total + totalForBusiness;
                               }
                          });
                });
           });
-          console.log(total);
-          $('#customerScore').val(total);
+          console.log("Overall total " + total);
+          $("#customerScore").text(total);
+          $("#viewerCustomerScore").text(total);
      });
      },
 
@@ -538,7 +520,6 @@ App = {
           var ipfsHash;
           var documentAmount;
           var documentType;
-
 
           return App.contracts.Business.at(_businessContractAddress).then(function (instance) {
           businessInstance = instance;
@@ -563,7 +544,6 @@ App = {
                     } else {
                          documentType = "Receipt";
                     }
-               //}).then(function () {
                     console.log("displaying "+ _businessContractAddress + i);
                     if (customerAddress == App.account){
                          App.displayDocumentToCustomer(
@@ -578,8 +558,7 @@ App = {
                               dueDate,
                               _businessName,
                               documentAmount,
-                              documentType,
-                              ipfsHash
+                              documentType
                          );
                     }
                });
@@ -603,7 +582,7 @@ App = {
           documentRow.append(documentTemplate.html());
      },
 
-     displayDocumentToViewer: function (date, businessName, documentAmount, documentType, ipfsHash) {
+     displayDocumentToViewer: function (date, businessName, documentAmount, documentType) {
           var viewerDocumentRow = $('#viewerDocumentRow');
           var viewerDocumentTemplate = $('#viewerDocumentTemplate');
           console.log("displaying to viewer portal");
@@ -611,7 +590,6 @@ App = {
           viewerDocumentTemplate.find('.viewer-document-business').text(businessName);
           viewerDocumentTemplate.find('.viewer-document-amount').text(documentAmount);
           viewerDocumentTemplate.find('.viewer-document-type').text(documentType);
-          viewerDocumentTemplate.find('.viewer-document-ipfs').text(ipfsHash);
 
           //add this document to the placeholder
           viewerDocumentRow.append(viewerDocumentTemplate.html());
@@ -646,6 +624,7 @@ App = {
                     console.log("Documents Displayed")
                } else {
                     console.log("You do not have permission to view these documents")
+                    $("#viewerCustomerId").text("You do not have permission to view " + customerAddress);
                };
           });
      },
@@ -663,7 +642,7 @@ $(function () {
      var accountInterval = setInterval(function () {
           // check for new account information and display it
           App.displayAccountInfo();
-
+          console.log("loading")
           // only reload the contract info if account has changed
           if (_account != App.account) {
                App.displayContractInfo();

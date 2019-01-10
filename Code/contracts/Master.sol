@@ -9,8 +9,13 @@ contract Master {
         The Master contract will be owned by CreditRegister. This is a contract factory which
         allows us to deploy new instances of the Business contract when reputable businesses
         want to be added onto the platform. These businesses will be able to record payment
-        histories, so they will need to be vetted first.
+        histories, so they will need to be vetted first by CreditRegister.
     */
+
+
+    ////////////////
+    // VARIABLES //
+    //////////////
     
     struct BusinessDetails{
         address businessContractAddress;
@@ -18,42 +23,69 @@ contract Master {
         bool businessActive;
     }
 
-    mapping(address => BusinessDetails) businessWalletAddressToDetails;
+    // The wallet address for the owner of the contract which is always CreditRegister
+    address public owner;
+    
+    //This mapping stores the Business Details for each business wallet address
+    mapping(address => BusinessDetails) private businessWalletAddressToDetails;
 
-    address[] allBusinesses;          //An array of the address of all businesses loaded on the platform. 
-                                        // From here you can use the mappings to get their name and contract number
+    // This array stores the buisness wallet addresses of all businesses loaded on the platform
+    address[] private allBusinesses;
+
+
+    /////////////
+    // EVENTS //
+    ///////////
 
     event businessAdded(address _businessWalletAddress, string _businessName, address _contractAddress);
 
-    address public owner;
 
+    ////////////////
+    // FUNCTIONS // 
+    //////////////   
+
+    // Set the owner of the contract do the wallet address that deployed it
     constructor() public{
         owner = msg.sender;
     }
 
 
+    // Add business to the platform by deploying a new business contract as long as  CreditRegister sends the request and the business does
+    // and the business does not already exist on the platform
     function addBusiness(address _businessWalletAddress, string _businessName) public {
         require(msg.sender == owner, "Only CreditRegister can add businesses.");
-        //require(businessExists[_businessName] != true, "Business name already exists.");
-        //require(businessAddressExists[_businessWalletAddress] != true, "Business wallet already exists.");
-        require(businessWalletAddressToDetails[_businessWalletAddress].businessActive != true, "Business wallet already exists.");
+        require(
+            businessWalletAddressToDetails[_businessWalletAddress].businessActive != true,
+            "Business wallet already exists."
+        );
 
+        // Deploy new business contract
         Business newBusiness = new Business();
+
+        // Store the new contract address
         address businessContractAddress = address(newBusiness);
+
+        // Update the Business Details on the mapping and add the business wallet address to the list of businesses on the platform
         businessWalletAddressToDetails[_businessWalletAddress] = BusinessDetails(businessContractAddress, _businessName,true);
         allBusinesses.push(_businessWalletAddress);
+
+        // Emit the event to confirm that the business has been added
         emit businessAdded(_businessWalletAddress, _businessName, businessContractAddress);
     }
 
 
-    function getBusinessDetails(address _businessWalletAddress) public view returns (
+    function getBusinessDetails(address _businessWalletAddress) public view 
+        returns (
         address businessContractAddress,
         string businessName,
         bool businessActive
-    ){
-        return (businessWalletAddressToDetails[_businessWalletAddress].businessContractAddress,
+        )
+    {
+        return (
+            businessWalletAddressToDetails[_businessWalletAddress].businessContractAddress,
             businessWalletAddressToDetails[_businessWalletAddress].businessName,
-            businessWalletAddressToDetails[_businessWalletAddress].businessActive);
+            businessWalletAddressToDetails[_businessWalletAddress].businessActive
+        );
     }
 
 
@@ -61,7 +93,9 @@ contract Master {
         return allBusinesses;
     }
 
+    // Allow CreditRegister to activate or deactivate businesses on the platform
     function setActiveFlag(address _businessWalletAddress, bool _businessActive) public {
+        require(msg.sender == owner, "Only CreditRegister can change the active flag of a business.");
         businessWalletAddressToDetails[_businessWalletAddress].businessActive = _businessActive;
     }
 }

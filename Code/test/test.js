@@ -20,8 +20,7 @@ var emptyBusinessDetails;
 var ipfsHash = "QmXgZAUWd8yo4tvjBETqzUy3wLx5YRzuDwUQnBwRGrAmAo";
 var invoice_amount1 = 60;
 var due_date = "20190131";
-var date1 = 1545264000; //20 Dec 2018
-//var now = 1545141718
+var date1 = 1735689600; //1 Jan 2025
 
 //Master contract test
 contract('Master', function(accounts) {
@@ -31,6 +30,8 @@ contract('Master', function(accounts) {
     invalid_business_address = accounts[9];
     business_address2 = accounts[2];
     master_account = accounts[0];
+    customer_address1 = accounts[3];
+
 
     // get details for other tests
     it("should allow me to store the masterContractAddress", function(){
@@ -111,7 +112,6 @@ contract('Master', function(accounts) {
             business_contract_address2 = receipt.logs[0].args._contractAddress;
         });
     });
-
 
     //Should not allow business to be added twice
     it("should not add a business if the wallet already exists", function() {
@@ -199,7 +199,6 @@ contract('Master', function(accounts) {
         });
     });
 
-
     // Business name must be set correctly
     it("should store Business Name correctly", function() {
         return Business.at(business_contract_address1).then(function(instance) {
@@ -218,7 +217,6 @@ contract('Master', function(accounts) {
         });
     }); 
 
-
     // Ownership can only be set once
     it("should only allow ownership to be set once", function(){
         return Business.at(business_contract_address1).then(function(instance){
@@ -231,17 +229,9 @@ contract('Master', function(accounts) {
                 "Error should be thrown when ownership set twice");
             });
     });
-    // Only business account can create customer - ie business must exist
 
-    // Customer creator is the business account
 
-//});
-
-//contract('Business', function(accounts){
-    //business_address1 = accounts[1];
-    //business_address2 = accounts[2];
-    customer_address1 = accounts[3];
-    //opening_balance1 = 60;
+    
 
     // Only the business owner can add a client to the list
     it("should not allow any account other than business owner to add customer to business list", function(){
@@ -331,7 +321,6 @@ contract('Master', function(accounts) {
             });
     });
 
-
     // Customer should exist on lookup contract and list should have business1 and business2 on it
     it("should include business1 and business2 on the customers list", function(){
         return Lookup.deployed().then(function(instance){
@@ -383,6 +372,7 @@ contract('Master', function(accounts) {
         });
     });
 
+    // Length of document list is returned
     it("should add return invoice list length", function(){
         return Business.at(business_contract_address1).then(function(instance){
             return instance.getCustomerDocumentsLength(customer_address1, {'from' : business_address1});
@@ -391,9 +381,9 @@ contract('Master', function(accounts) {
         });
     });
 
+    //IPFS hash should be returned
     it("should return the IPFS hash from Address to invoice mapping", function(){
         return Business.at(business_contract_address1).then(function(instance){
-
                 return instance.getCustomerDocument(customer_address1, 0, {'from' : business_address1});
         }).then(function(invoice) {
             console.log(invoice);
@@ -404,7 +394,6 @@ contract('Master', function(accounts) {
     // can add to permission list
     it("should allow customer account to add permission", function(){
         return Lookup.deployed().then(function(instance) {
-        
             return instance.addPermissionToCustomerList(accounts[7], date1, {from : customer_address1});         
         }).then(function(receipt) {
             assert.equal(receipt.logs.length, 1, "an event should have been triggered");
@@ -418,7 +407,6 @@ contract('Master', function(accounts) {
 
     it("should return valid permission check", function(){
         return Lookup.deployed().then(function(instance) {
-        
             return instance.checkPermission(customer_address1, accounts[7]);         
         }).then(function(result) {
             assert.equal(result, true, "result should be true");
@@ -426,6 +414,4 @@ contract('Master', function(accounts) {
         });
     });
     
-    // can access document
-
 })
