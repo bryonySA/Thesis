@@ -28,49 +28,6 @@
     crossorigin="anonymous"></script> 
 </head>
 
- <script type="text/javascript">
-    function uploadInvoice() {
-        const reader = new FileReader();
-        reader.onloadend = function () {
-            //const ipfs = window.IpfsApi('localhost', 5001) // Connect to IPFS
-            const ipfs = window.IpfsApi('ipfs.infura.io', 5001, { protocol: 'https' }) // Connect to IPFS
-            const buf = buffer.Buffer(reader.result) // Convert data into buffer
-            ipfs.files.add(buf, (err, result) => { // Upload buffer to IPFS
-                if (err) {
-                    console.error(err)
-                    return
-                }
-                let url = `https://ipfs.io/ipfs/${result[0].hash}`
-                console.log(`Url --> ${url}`)
-                App.processDocument(result[0].hash, "invoice");
-            })
-        }
-        const invoice = document.getElementById("invoice");
-        reader.readAsArrayBuffer(invoice.files[0]); // Read Provided File
-    }
-
-    function uploadReceipt() {
-        const reader = new FileReader();
-        reader.onloadend = function () {
-            //const ipfs = window.IpfsApi('localhost', 5001) // Connect to IPFS
-            const ipfs = window.IpfsApi('ipfs.infura.io', 5001, { protocol: 'https' }) // Connect to IPFS
-            const buf = buffer.Buffer(reader.result) // Convert data into buffer
-            ipfs.files.add(buf, (err, result) => { // Upload buffer to IPFS
-                if (err) {
-                    console.error(err)
-                    return
-                }
-                let url = `https://ipfs.io/ipfs/${result[0].hash}`
-                console.log(`Url --> ${url}`)
-                //muliplier = 1 means receipt
-                App.processDocument(result[0].hash, "receipt");
-            })
-        }
-        const receipt = document.getElementById("receipt");
-        reader.readAsArrayBuffer(receipt.files[0]); // Read Provided File
-    }
-</script> 
-
 <body>
     <ul class="nav nav-pills">
         <li class="nav-item">
@@ -188,7 +145,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary btn-success" data-dismiss="modal" onclick="uploadInvoice(); return false;">Upload Invoice</button>
+                    <button type="button" class="btn btn-primary btn-success" onclick="App.uploadInvoice();">Upload Invoice</button>
                     <button type="button" class="btn" data-dismiss="modal">Close</button>
                 </div>
             </div>
@@ -226,7 +183,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary btn-success" data-dismiss="modal" onclick="uploadReceipt(); return false;">Upload Receipt</button>
+                    <button type="button" class="btn btn-primary btn-success" data-dismiss="modal" onclick="App.uploadReceipt(); return false;">Upload Receipt</button>
                     <button type="button" class="btn" data-dismiss="modal">Close</button>
                 </div>
             </div>

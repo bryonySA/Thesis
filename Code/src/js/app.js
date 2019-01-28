@@ -1,5 +1,7 @@
 var Web3 = require('web3');
 var TruffleContract = require('truffle-contract');
+var buffer = require('buffer/').Buffer;
+var IPFS = require('ipfs-http-client');
 
 App = {
      web3Provider: null,
@@ -7,10 +9,10 @@ App = {
      account: 0x0,
      loading: false,
      web3: null,
-     existingMasterContractAddress: 0x0,
-     //existingMasterContractAddress: '0xe644175fff397b9b7df076f768fc24c5acd5c3b5',
-     existingLookupContractAddress: 0x0,
-     //existingLookupContractAddress: '0xa852b56903db565cc2075368eb4efac97bb6f93b',
+     //existingMasterContractAddress: 0x0,
+     existingMasterContractAddress: '0xe6cd3a3ee9aefdb7dea9a2a0087ffbc3efb58536',
+     //existingLookupContractAddress: 0x0,
+     existingLookupContractAddress: '0x85ada02a4ff81691e39f5d77b926a81cc4d9a0af',
      masterAddress: 0x0,
      lookupAddress: 0x0,
 
@@ -525,10 +527,11 @@ App = {
           businessInstance = instance;
           console.log(_businessName);
           return businessInstance.getCustomerDetails(customerAddress);
-     }).then(function (customerDetails) {
+     }).then(async function (customerDetails) {
           //Add the balance if the customer owes money
-          if (customerDetails[1] < 0) {
-               totalForBusiness = totalForBusiness + customerDetails[1];
+          if (customerDetails[1] <= 0) {
+               let totalForBusiness = await totalForBusiness + customerDetails[1];
+               console.log('Current total for business', totalForBusiness);
           }
           return businessInstance.getCustomerDocumentsLength(customerAddress);
      }).then(function (documentCount) {
@@ -629,6 +632,53 @@ App = {
           });
      },
 
+     uploadInvoice: function() {
+        
+          const reader = new FileReader();
+
+          // Set up the on load end function
+          reader.onloadend = function (r, ev) {
+               const ipfs = new IPFS({host:'ipfs.infura.io', port: 5001, protocol: 'https' }); // Connect to IPFS
+               const buf = buffer.from(reader.result); // Convert data into buffer
+               ipfs.add(buf, (err, result) => { // Upload buffer to IPFS
+                  if (err) {
+                      console.error(err)
+                      return
+                  }
+                  let url = `https://ipfs.io/ipfs/${result[0].hash}`
+                  console.log(`Url --> ${url}`)
+                  App.processDocument(result[0].hash, "invoice");
+               })
+          }
+
+          // Find the file and run the file reader on it
+          const invoice = document.getElementById("invoice");
+          setTimeout(() => reader.readAsArrayBuffer(invoice.files[0]), 500); // Read Provided File
+      },
+
+     uploadReceipt: function() {
+          const reader = new FileReader();
+
+          // Set up the on load end function
+          reader.onloadend = function (r, ev) {
+              const ipfs = new IPFS({host:'ipfs.infura.io', port: 5001, protocol: 'https' }); // Connect to IPFS
+              const buf = buffer.from(reader.result); // Convert data into buffer
+              ipfs.add(buf, (err, result) => { // Upload buffer to IPFS
+                  if (err) {
+                      console.error(err)
+                      return
+                  }
+                  let url = `https://ipfs.io/ipfs/${result[0].hash}`
+                  console.log(`Url --> ${url}`)
+                  App.processDocument(result[0].hash, "receipt");
+              })
+          }
+
+          // Find the file and run the file reader on it
+          const receipt = document.getElementById("receipt");
+          setTimeout(() => reader.readAsArrayBuffer(receipt.files[0]), 500); // Read Provided File
+      },
+
 };
 
 $(function () {
@@ -642,7 +692,7 @@ $(function () {
      var accountInterval = setInterval(function () {
           // check for new account information and display it
           App.displayAccountInfo();
-          console.log("loading")
+          //console.log("loading")
           // only reload the contract info if account has changed
           if (_account != App.account) {
                App.displayContractInfo();
